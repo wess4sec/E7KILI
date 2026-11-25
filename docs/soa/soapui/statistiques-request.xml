@@ -1,0 +1,9 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:hk="urn:hkili:soa">
+  <soap:Header/>
+  <soap:Body>
+    <hk:statistiques>
+      <idConversation>6740b02a38e91d0e12345679</idConversation>
+    </hk:statistiques>
+  </soap:Body>
+</soap:Envelope>

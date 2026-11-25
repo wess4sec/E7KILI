@@ -54,7 +54,6 @@ class FakeChatApiService extends ChatApiService {
         ),
       );
 
-  int createConversationCalls = 0;
   int sendMessageCalls = 0;
   Object? sendMessageFailure;
 
@@ -87,25 +86,14 @@ class FakeChatApiService extends ChatApiService {
   }
 
   @override
-  Future<Conversation> createConversation({String? title}) async {
-    createConversationCalls++;
-
-    final now = DateTime.now();
-
-    return Conversation(
-      id: 'test-conversation-id',
-      title: title ?? 'New conversation',
-      ownerId: 'test-user-id',
-      createdAt: now,
-      updatedAt: now,
-    );
-  }
-
-  @override
-  Future<({ChatMessage userMessage, ChatMessage assistantMessage})> sendMessage(
-    String conversationId,
-    String content,
-  ) async {
+  Future<
+    ({
+      String conversationId,
+      ChatMessage userMessage,
+      ChatMessage assistantMessage,
+    })
+  >
+  sendMessage(String? conversationId, String content, {String? title}) async {
     sendMessageCalls++;
     if (sendMessageFailure != null) {
       throw sendMessageFailure!;
@@ -114,6 +102,7 @@ class FakeChatApiService extends ChatApiService {
     final now = DateTime.now();
 
     return (
+      conversationId: conversationId ?? 'test-conversation-id',
       userMessage: ChatMessage(
         id: 'user-message-id',
         text: content,
@@ -241,7 +230,6 @@ void main() {
     await tester.tap(find.byKey(const Key('send-button')));
     await tester.pumpAndSettle();
 
-    expect(chatApiService.createConversationCalls, 1);
     expect(chatApiService.sendMessageCalls, 1);
 
     expect(find.text('Aaslema Hkili'), findsOneWidget);
@@ -331,6 +319,37 @@ void main() {
     expect(
       find.textContaining('Sensitive internal error details'),
       findsNothing,
+    );
+  });
+
+  testWidgets('Shows a friendly message when the AI service is rate limited', (
+    tester,
+  ) async {
+    await openAuthenticatedChat(tester);
+    chatApiService.sendMessageFailure = const ApiException(
+      statusCode: 429,
+      code: 'TOO_MANY_REQUESTS',
+      message: 'Sensitive provider quota details',
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('chat-input')),
+      'Aaslema Hkili',
+    );
+    await tester.tap(find.byKey(const Key('send-button')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Hkili reçoit beaucoup de demandes. Réessaie dans quelques instants.'),
+      findsOneWidget,
+    );
+    expect(find.textContaining('Sensitive provider quota details'), findsNothing);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('chat-input')))
+          .controller!
+          .text,
+      'Aaslema Hkili',
     );
   });
 

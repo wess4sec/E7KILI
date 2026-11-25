@@ -14,6 +14,39 @@ function createApp({
   const app = express();
 
   app.disable('x-powered-by');
+  app.use((req, res, next) => {
+    const origin = req.get('origin');
+    const allowedOrigin =
+      origin &&
+      /^http:\/\/(?:localhost|127\.0\.0\.1|192\.168\.100\.116)(?::\d+)?$/.test(
+        origin,
+      );
+
+    if (!allowedOrigin) {
+      if (req.method === 'OPTIONS') {
+        return res.sendStatus(403);
+      }
+      return next();
+    }
+
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.vary('Origin');
+
+    if (req.method === 'OPTIONS') {
+      res.setHeader(
+        'Access-Control-Allow-Methods',
+        'GET, POST, PATCH, DELETE, OPTIONS',
+      );
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Accept, Authorization, Content-Type',
+      );
+      res.setHeader('Access-Control-Max-Age', '3600');
+      return res.sendStatus(204);
+    }
+
+    return next();
+  });
   app.use(createRequestLogger(logger));
   app.use(express.json({ limit: '16kb' }));
 

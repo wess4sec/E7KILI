@@ -1,0 +1,9 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:hk="urn:hkili:soa">
+  <soap:Header/>
+  <soap:Body>
+    <hk:compterMots>
+      <texte>Aaslema, Hkili !</texte>
+    </hk:compterMots>
+  </soap:Body>
+</soap:Envelope>

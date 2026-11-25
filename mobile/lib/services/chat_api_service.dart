@@ -8,16 +8,10 @@ class ChatApiService {
 
   final ApiClient apiClient;
 
-  Future<Conversation> createConversation({String? title}) async {
-    final body = <String, dynamic>{
-      if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
-    };
-    final data = await apiClient.post('/conversations', body: body);
-    final convJson = (data as Map<String, dynamic>)['conversation'] as Map<String, dynamic>;
-    return Conversation.fromJson(convJson);
-  }
-
-  Future<List<Conversation>> listConversations({int page = 1, int limit = 20}) async {
+  Future<List<Conversation>> listConversations({
+    int page = 1,
+    int limit = 20,
+  }) async {
     final data = await apiClient.get(
       '/conversations',
       queryParams: {'page': '$page', 'limit': '$limit'},
@@ -29,7 +23,7 @@ class ChatApiService {
   }
 
   Future<({Conversation conversation, List<ChatMessage> messages})>
-      getConversationWithMessages(
+  getConversationWithMessages(
     String conversationId, {
     int page = 1,
     int limit = 50,
@@ -39,20 +33,28 @@ class ChatApiService {
       queryParams: {'page': '$page', 'limit': '$limit'},
     );
     final map = data as Map<String, dynamic>;
-    final conv = Conversation.fromJson(map['conversation'] as Map<String, dynamic>);
+    final conv = Conversation.fromJson(
+      map['conversation'] as Map<String, dynamic>,
+    );
     final msgList = (map['messages'] as List)
-        .map((item) => ChatMessage.fromBackendJson(item as Map<String, dynamic>))
+        .map(
+          (item) => ChatMessage.fromBackendJson(item as Map<String, dynamic>),
+        )
         .toList();
 
     return (conversation: conv, messages: msgList);
   }
 
-  Future<Conversation> renameConversation(String conversationId, String newTitle) async {
+  Future<Conversation> renameConversation(
+    String conversationId,
+    String newTitle,
+  ) async {
     final data = await apiClient.patch(
       '/conversations/$conversationId',
       body: {'title': newTitle.trim()},
     );
-    final convJson = (data as Map<String, dynamic>)['conversation'] as Map<String, dynamic>;
+    final convJson =
+        (data as Map<String, dynamic>)['conversation'] as Map<String, dynamic>;
     return Conversation.fromJson(convJson);
   }
 
@@ -60,28 +62,36 @@ class ChatApiService {
     await apiClient.delete('/conversations/$conversationId');
   }
 
-  Future<({ChatMessage userMessage, ChatMessage assistantMessage})> sendMessage(
-    String conversationId,
-    String content,
-  ) async {
+  Future<
+    ({
+      String conversationId,
+      ChatMessage userMessage,
+      ChatMessage assistantMessage,
+    })
+  >
+  sendMessage(String? conversationId, String content, {String? title}) async {
     final data = await apiClient.post(
-      '/conversations/$conversationId/messages',
+      '/chat',
       body: {
-  'content': content.trim(),
-  'generateReply': true,
-},
+        'message': content.trim(),
+        'conversationId': ?conversationId,
+        if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
+      },
     );
     final map = data as Map<String, dynamic>;
 
     ChatMessage assistantMsg;
     ChatMessage userMsg;
+    final responseConversationId = map['conversationId'];
 
-    if (map['userMessage'] != null) {
+    if (responseConversationId is String &&
+        map['userMessage'] is Map<String, dynamic> &&
+        map['assistantMessage'] is Map<String, dynamic>) {
       userMsg = ChatMessage.fromBackendJson(
         map['userMessage'] as Map<String, dynamic>,
       );
       assistantMsg = ChatMessage.fromBackendJson(
-        map['message'] as Map<String, dynamic>,
+        map['assistantMessage'] as Map<String, dynamic>,
       );
     } else {
       throw ApiException(
@@ -91,6 +101,10 @@ class ChatApiService {
       );
     }
 
-    return (userMessage: userMsg, assistantMessage: assistantMsg);
+    return (
+      conversationId: responseConversationId,
+      userMessage: userMsg,
+      assistantMessage: assistantMsg,
+    );
   }
 }

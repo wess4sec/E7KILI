@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -99,13 +98,6 @@ class ApiClient {
       final headers = await _headers();
       final response = await _client.get(uri, headers: headers);
       return _handleResponse(response, method: 'GET', uri: uri);
-    } on SocketException catch (e) {
-      debugPrint('[ApiClient] SocketException GET $uri: $e');
-      throw const ApiException(
-        statusCode: 0,
-        code: 'NETWORK_ERROR',
-        message: 'Impossible de joindre le serveur. Vérifiez votre connexion.',
-      );
     } on http.ClientException catch (e) {
       debugPrint('[ApiClient] ClientException GET $uri: $e');
       throw const ApiException(
@@ -126,13 +118,6 @@ class ApiClient {
         body: body != null ? jsonEncode(body) : null,
       );
       return _handleResponse(response, method: 'POST', uri: uri);
-    } on SocketException catch (e) {
-      debugPrint('[ApiClient] SocketException POST $uri: $e');
-      throw const ApiException(
-        statusCode: 0,
-        code: 'NETWORK_ERROR',
-        message: 'Impossible de joindre le serveur. Vérifiez votre connexion.',
-      );
     } on http.ClientException catch (e) {
       debugPrint('[ApiClient] ClientException POST $uri: $e');
       throw const ApiException(
@@ -153,13 +138,6 @@ class ApiClient {
         body: body != null ? jsonEncode(body) : null,
       );
       return _handleResponse(response, method: 'PATCH', uri: uri);
-    } on SocketException catch (e) {
-      debugPrint('[ApiClient] SocketException PATCH $uri: $e');
-      throw const ApiException(
-        statusCode: 0,
-        code: 'NETWORK_ERROR',
-        message: 'Impossible de joindre le serveur. Vérifiez votre connexion.',
-      );
     } on http.ClientException catch (e) {
       debugPrint('[ApiClient] ClientException PATCH $uri: $e');
       throw const ApiException(
@@ -176,13 +154,6 @@ class ApiClient {
       final headers = await _headers();
       final response = await _client.delete(uri, headers: headers);
       return _handleResponse(response, method: 'DELETE', uri: uri);
-    } on SocketException catch (e) {
-      debugPrint('[ApiClient] SocketException DELETE $uri: $e');
-      throw const ApiException(
-        statusCode: 0,
-        code: 'NETWORK_ERROR',
-        message: 'Impossible de joindre le serveur. Vérifiez votre connexion.',
-      );
     } on http.ClientException catch (e) {
       debugPrint('[ApiClient] ClientException DELETE $uri: $e');
       throw const ApiException(

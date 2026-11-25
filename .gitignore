@@ -8,6 +8,10 @@ node_modules/
 npm-debug.log*
 coverage/
 
+# Java / Maven
+**/target/
+*.class
+
 # Flutter / Dart
 .dart_tool/
 .flutter-plugins

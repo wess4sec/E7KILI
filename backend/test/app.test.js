@@ -134,6 +134,43 @@ test('serves the versioned health endpoint', async () => {
   });
 });
 
+test('allows Flutter Web preflights from localhost and the configured LAN host', async () => {
+  await withServer(async (baseUrl) => {
+    for (const origin of [
+      'http://localhost:51234',
+      'http://192.168.100.116:51234',
+    ]) {
+      const response = await fetch(`${baseUrl}/api/v1/auth/login`, {
+        method: 'OPTIONS',
+        headers: {
+          origin,
+          'access-control-request-method': 'POST',
+          'access-control-request-headers': 'authorization,content-type',
+        },
+      });
+
+      assert.equal(response.status, 204);
+      assert.equal(response.headers.get('access-control-allow-origin'), origin);
+      assert.match(
+        response.headers.get('access-control-allow-headers'),
+        /Authorization/,
+      );
+    }
+  });
+});
+
+test('rejects preflights from untrusted origins', async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: 'OPTIONS',
+      headers: { origin: 'http://untrusted.example' },
+    });
+
+    assert.equal(response.status, 403);
+    assert.equal(response.headers.get('access-control-allow-origin'), null);
+  });
+});
+
 test('returns a consistent error for unknown routes', async () => {
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}/missing`);

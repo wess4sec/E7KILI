@@ -1,0 +1,21 @@
+server:
+  port: ${SPRING_PORT:8081}
+  shutdown: graceful
+
+spring:
+  application:
+    name: hkili-spring-rest
+  lifecycle:
+    timeout-per-shutdown-phase: 15s
+
+hkili:
+  node-api-base-url: ${NODE_API_BASE_URL:http://127.0.0.1:3000/api/v1}
+  jwt-secret: ${JWT_SECRET:}
+  node-connect-timeout: ${NODE_CONNECT_TIMEOUT:5s}
+  node-request-timeout: ${NODE_REQUEST_TIMEOUT:50s}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs

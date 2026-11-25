@@ -2,6 +2,10 @@
 
 The backend exposes a versioned JSON REST API (`/api/v1`).
 
+The separate Java SOA façade is documented in [docs/soa/rest-api.md](soa/rest-api.md).
+It is the REST endpoint used by Flutter for authenticated chat and conversation
+operations; authentication and domain persistence remain owned by Node.
+
 ## Conventions
 
 - The mobile client communicates with the backend over HTTP using JSON.

@@ -60,6 +60,45 @@ The mobile and backend projects have independent toolchains and dependency
 manifests. They can be developed and validated independently, while this
 repository root provides shared project context and documentation.
 
+## SOA extension
+
+The `soa/` Maven reactor adds two Java services without replacing Node.js:
+
+- `spring-rest/` exposes authenticated REST endpoints for chat and conversation
+  access, validates the existing HS256 bearer token, then forwards it to Node.
+- `jaxws-soap/` publishes `compterMots` and `statistiques`; the latter calls the
+  authenticated Node conversation API and computes statistics from its real
+  message pages.
+- `common-client/` centralizes the HTTP calls and response/error handling used
+  by both Java services.
+
+Node remains the single authority for account authentication, ownership,
+MongoDB records, conversation business logic, and Gemini. Java does not connect
+to MongoDB or Gemini and does not issue a second token or create duplicate
+records. Flutter keeps registration/login on Node and uses Spring for
+authenticated chat/history operations; guest mode remains local.
+
+```mermaid
+flowchart LR
+  Flutter -->|login/register| Node[Express API]
+  Flutter -->|chat/history, bearer JWT| REST[Spring REST]
+  REST -->|forward token| Node
+  SoapClient -->|SOAP, bearer JWT| SOAP[JAX-WS]
+  SOAP -->|forward token| Node
+  Node --> Mongo[(Existing MongoDB)]
+  Node --> Gemini[Gemini API]
+```
+
+Spring requires `JWT_SECRET` to match the Node backend's local configuration.
+It validates token signatures and the Mongo ObjectId subject, and Node
+revalidates every forwarded request and conversation ownership. SOAP
+`statistiques` similarly forwards the incoming bearer header. `compterMots`
+accepts supplied text and does not access application data.
+
+The REST façade adds `/chat`, `GET /conversations`,
+`DELETE /conversations/{id}`, and history-preserving `GET`/`PATCH`
+conversation routes. See [SOA integration documentation](soa/README.md).
+
 ## Current status
 
 - Flutter Android/iOS application with Hkili custom-painted mascot, welcome flow, local navigation, and UI prototype.
@@ -74,3 +113,6 @@ repository root provides shared project context and documentation.
 - Flutter authentication and persisted chat/history/profile screens are
   integrated with the Express API. Guest mode remains an intentional local
   mock flow and is clearly labeled.
+- The SOA Maven reactor contains the Spring REST façade and Metro SOAP service.
+  Their automated tests mock the Node boundary; live full-stack verification
+  remains environment-dependent.

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import '../screens/login_screen.dart';
@@ -43,19 +42,22 @@ class _HkiliAppState extends State<HkiliApp> {
 
     final tokenStorage = SecureTokenStorage();
 
-    final apiClient = ApiClient(
-      baseUrl: ApiConfig().baseUrl,
+    final apiConfig = ApiConfig();
+    final backendApiClient = ApiClient(
+      baseUrl: apiConfig.backendBaseUrl,
+      tokenStorage: tokenStorage,
+    );
+    final soaApiClient = ApiClient(
+      baseUrl: apiConfig.soaBaseUrl,
       tokenStorage: tokenStorage,
     );
 
-    _authService = widget.authService ??
-        AuthService(
-          apiClient: apiClient,
-          tokenStorage: tokenStorage,
-        );
+    _authService =
+        widget.authService ??
+        AuthService(apiClient: backendApiClient, tokenStorage: tokenStorage);
 
     _chatApiService =
-        widget.chatApiService ?? ChatApiService(apiClient: apiClient);
+        widget.chatApiService ?? ChatApiService(apiClient: soaApiClient);
 
     if (widget.restoreSessionOnStart) {
       _restoreSession();
@@ -112,42 +114,38 @@ class _HkiliAppState extends State<HkiliApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       home: _isInitializing
-          ? const Scaffold(
-              body: Center(
-                child: CircularProgressIndicator(),
-              ),
-            )
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
           : !_hasStarted
-              ? WelcomeScreen(
-                  onGetStarted: () {
-                    setState(() {
-                      _hasStarted = true;
-                    });
-                  },
-                )
-              : _authService.isAuthenticated || _isGuestMode
-                  ? MainShell(
-                      chatApiService: _chatApiService,
-                      authService: _authService,
-                      onLogout: _logout,
-                      isGuestMode: _isGuestMode,
-                    )
-                  : _showRegister
-                      ? RegisterScreen(
-                          authService: _authService,
-                          onRegisterSuccess: _onAuthenticationSuccess,
-                          onNavigateToLogin: _openLogin,
-                        )
-                      : LoginScreen(
-                          authService: _authService,
-                          onLoginSuccess: _onAuthenticationSuccess,
-                          onNavigateToRegister: _openRegister,
-                          onContinueAsGuest: () {
-                            setState(() {
-                              _isGuestMode = true;
-                            });
-                          },
-                        ),
+          ? WelcomeScreen(
+              onGetStarted: () {
+                setState(() {
+                  _hasStarted = true;
+                });
+              },
+            )
+          : _authService.isAuthenticated || _isGuestMode
+          ? MainShell(
+              chatApiService: _chatApiService,
+              authService: _authService,
+              onLogout: _logout,
+              isGuestMode: _isGuestMode,
+            )
+          : _showRegister
+          ? RegisterScreen(
+              authService: _authService,
+              onRegisterSuccess: _onAuthenticationSuccess,
+              onNavigateToLogin: _openLogin,
+            )
+          : LoginScreen(
+              authService: _authService,
+              onLoginSuccess: _onAuthenticationSuccess,
+              onNavigateToRegister: _openRegister,
+              onContinueAsGuest: () {
+                setState(() {
+                  _isGuestMode = true;
+                });
+              },
+            ),
     );
   }
 }

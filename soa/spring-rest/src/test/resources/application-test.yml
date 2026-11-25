@@ -1,0 +1,5 @@
+hkili:
+  node-api-base-url: http://127.0.0.1:3000/api/v1
+  jwt-secret: test-secret-for-hkili-jwt-validation-32-bytes-minimum
+  node-connect-timeout: 1s
+  node-request-timeout: 2s

@@ -1,0 +1,50 @@
+{
+  "info": {
+    "_postman_id": "d4a3d8b8-3df5-4db4-b781-5b0a4c554a72",
+    "name": "Hkili Spring REST",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Spring façade requests. Set a valid Hkili bearer token locally."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8081" },
+    { "key": "token", "value": "" },
+    { "key": "conversationId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Send chat message",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"message\": \"Aaslema Hkili\"\n}"
+        },
+        "url": "{{baseUrl}}/chat"
+      }
+    },
+    {
+      "name": "List conversations",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/conversations?page=1&limit=20"
+      }
+    },
+    {
+      "name": "Delete conversation",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{baseUrl}}/conversations/{{conversationId}}"
+      }
+    }
+  ]
+}

@@ -86,26 +86,15 @@ class _MainShellState extends State<MainShell> {
         return true;
       }
 
-      if (_conversationId == null) {
-        final title = content.length > 60
-            ? '${content.substring(0, 57)}...'
-            : content;
-
-        final conversation = await widget.chatApiService.createConversation(
-          title: title,
-        );
-
-        _conversationId = conversation.id;
-      }
-
       final result = await widget.chatApiService.sendMessage(
-        _conversationId!,
+        _conversationId,
         content,
       );
 
       if (!mounted) return false;
 
       setState(() {
+        _conversationId = result.conversationId;
         _messages.add(result.userMessage);
         _messages.add(result.assistantMessage);
         _historyRefreshKey++;
@@ -137,7 +126,7 @@ class _MainShellState extends State<MainShell> {
     if (error.code == 'NETWORK_ERROR') {
       return 'Connexion impossible. Vérifie ta connexion internet et réessaie.';
     }
-    if (error.code == 'RATE_LIMIT_EXCEEDED') {
+    if (error.statusCode == 429 || error.code == 'RATE_LIMIT_EXCEEDED') {
       return 'Hkili reçoit beaucoup de demandes. Réessaie dans quelques instants.';
     }
     if (error.code == 'TOKEN_EXPIRED' || error.statusCode == 401) {
