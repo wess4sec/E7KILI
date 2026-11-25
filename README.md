@@ -1,110 +1,100 @@
 # Hkili
 
-Hkili is a Tunisian-inspired conversational assistant. The monorepo combines a
-Flutter mobile client, a Node.js/Express backend, MongoDB persistence, and
-Google Gemini text generation. An academic SOA extension adds a Spring Boot
-REST façade and a JAX-WS SOAP service while keeping Node.js authoritative for
-authentication, conversation data, and AI generation.
+Hkili est un assistant conversationnel mobile inspiré de la culture
+tunisienne. Le dépôt réunit une application Flutter, une API Node.js/Express,
+une persistance MongoDB et une intégration Google Gemini côté serveur. Une
+extension SOA ajoute une façade REST Spring Boot et un service SOAP JAX-WS,
+sans déplacer l'authentification, les données ni la logique d'IA hors de Node.
 
-## Project objectives
+## Objectifs
 
-- Provide a mobile conversational experience with authenticated chat and
-  conversation history.
-- Keep credentials, Gemini calls, and MongoDB access on the backend.
-- Demonstrate cross-platform development and service-oriented integration
-  using REST and SOAP.
+- Proposer une application mobile de conversation avec historique.
+- Centraliser les comptes, les conversations, les messages et les secrets dans
+  le backend Node.js.
+- Illustrer l'intégration de services REST et SOAP au-dessus d'un domaine
+  métier unique.
 
-## Features
+## Fonctionnalités
 
-- Flutter welcome, authentication, guest, chat, history, and profile flows.
-- Express REST API with JWT authentication and MongoDB-backed users,
-  conversations, and messages.
-- Gemini generation with configurable primary/fallback models, bounded
-  transient retries, and sanitized provider errors.
-- Spring Boot REST façade with JWT Bearer validation and OpenAPI/Swagger UI.
-- JAX-WS SOAP word counting and statistics calculated from an owned conversation.
-- Automated backend, Flutter, Spring REST, and SOAP tests.
+- Parcours Flutter d'accueil, inscription, connexion, invité, chat, historique
+  et profil.
+- API Express versionnée avec authentification JWT et données MongoDB.
+- Génération Gemini avec modèles primaire et secondaire, reprises bornées et
+  erreurs filtrées.
+- Façade Spring Boot sécurisée par Bearer JWT et documentée avec OpenAPI.
+- Opérations SOAP de comptage de mots et de statistiques calculées sur les
+  messages réels d'une conversation.
+- Tests automatisés pour Node, Flutter, Spring REST et JAX-WS.
 
-Guest chat is a local demonstration flow; authenticated conversations use the
-backend. A live Gemini result depends on the configured key, model availability,
-quota, and Google's service availability.
+Le mode invité conserve une conversation locale de démonstration ; il ne crée
+pas de données serveur. La génération réelle dépend de la configuration et de
+la disponibilité du service Gemini.
 
-## Screenshots
+## Technologies
 
-Screenshots are not currently included. Add reviewed, real application captures
-here before submitting or publishing this repository.
-
-<!-- Screenshot placeholder: welcome and authentication screens -->
-<!-- Screenshot placeholder: authenticated chat and conversation history -->
-
-## Technology stack
-
-| Area | Technology |
+| Domaine | Technologies |
 | --- | --- |
-| Mobile | Flutter and Dart |
-| Core API and domain services | Node.js, Express, Mongoose |
-| SOA REST façade | Java 17, Spring Boot, Spring Security, springdoc OpenAPI |
-| SOA SOAP service | Java 17, Jakarta JAX-WS, Eclipse Metro |
-| Database | MongoDB |
-| AI | Google Gemini `generateContent` REST API |
-| Tests | Node test suite, Flutter test/analyze, JUnit 5 and Spring Test |
+| Application mobile | Flutter, Dart |
+| API et logique métier | Node.js, Express, Mongoose |
+| Façade REST SOA | Java 17, Spring Boot, Spring Security, springdoc OpenAPI |
+| Service SOAP SOA | Java 17, Jakarta JAX-WS, Eclipse Metro |
+| Base de données | MongoDB |
+| Génération de texte | API REST Google Gemini |
+| Tests | `node:test`, Flutter Test, JUnit 5, Spring Test |
 
 ## Architecture
 
-Flutter uses Node.js for registration and login, and the SOA Spring REST
-façade for authenticated chat and conversation operations. Spring verifies
-the existing HS256 JWT and forwards it to Node. Node revalidates ownership,
-executes domain operations, persists records in the existing MongoDB, and
-calls Gemini when requested. The SOAP service uses the same Node API and token
-for conversation statistics; it does not connect to MongoDB directly.
-
 ```mermaid
 flowchart LR
-  Flutter -->|login/register| Node[Node.js API]
-  Flutter -->|chat/history + Bearer JWT| Spring[Spring Boot REST]
-  Spring -->|forward Bearer JWT| Node
-  SoapClient[SoapUI / SOAP client] -->|SOAP + Bearer JWT| SOAP[JAX-WS SOAP]
-  SOAP -->|forward Bearer JWT| Node
-  Node --> Mongo[(Existing MongoDB)]
-  Node --> Gemini[Google Gemini API]
+  Flutter -->|Inscription et connexion| Node[API Node.js]
+  Flutter -->|Chat et historique, JWT| Spring[Façade REST Spring]
+  Spring -->|Transmission du même JWT| Node
+  ClientSOAP[SoapUI ou client SOAP] -->|SOAP, JWT pour les statistiques| SOAP[JAX-WS]
+  SOAP -->|Transmission du même JWT| Node
+  Node --> Mongo[(MongoDB existante)]
+  Node --> Gemini[Google Gemini]
 ```
 
-See [docs/architecture.md](docs/architecture.md) and [docs/soa/](docs/soa/README.md).
+Node.js reste l'autorité pour les comptes, la propriété des conversations,
+MongoDB et Gemini. Spring et SOAP délèguent les opérations au même backend ;
+aucune seconde base ni copie de conversation n'est créée. Flutter utilise
+Node pour l'inscription et la connexion, et Spring pour le chat authentifié et
+l'historique.
 
-## Repository structure
+## Structure du dépôt
 
 ```text
-backend/                 Node.js API, domain services, MongoDB and Gemini
-mobile/                  Flutter application
+backend/                 API Node.js, services, modèles MongoDB et Gemini
+mobile/                  Application Flutter
 soa/
-  common-client/         Shared Java HTTP client for the Node API
-  spring-rest/            Spring Boot REST façade and OpenAPI
-  jaxws-soap/             JAX-WS SOAP service and Metro runtime
-  .mvn/                   Maven Wrapper configuration
-docs/                    Existing architecture and Node REST API docs
-docs/soa/                SOA contracts, setup and test guidance
-docs/rapport/            Academic report source in French
+  common-client/         Client HTTP partagé vers Node
+  spring-rest/           Façade REST Spring Boot et documentation OpenAPI
+  jaxws-soap/            Service SOAP JAX-WS exécuté par Metro
+docs/                    Documentation technique
+docs/soa/                Contrats et vérifications SOA
+docs/rapport/            Rapport académique en français
 ```
 
-## Prerequisites
+## Prérequis
 
 - Git
-- Node.js 22.9+ and npm
-- Flutter SDK and Dart (see the Flutter SDK's current platform requirements)
-- MongoDB, local or hosted
-- Java 17 JDK for running the SOA applications
-- Internet access on first Maven Wrapper use to download Maven and dependencies
-- A Google Gemini API key for live AI responses
+- Node.js 22.9 ou version ultérieure et npm
+- Flutter SDK et Dart
+- MongoDB, local ou hébergé
+- JDK 17 pour l'exécution prise en charge des modules SOA
+- Accès Internet lors du premier usage du Maven Wrapper
+- Clé Google Gemini pour générer des réponses réelles
 
-The source targets Java 17. The current development environment used JDK 21 to
-compile with `--release 17`; JDK 17 itself was not installed or used for the
-runtime verification in this workspace.
+Le code Java cible la version 17. Dans l'environnement de vérification, Maven
+a été exécuté avec le JDK 25 d'IntelliJ et les processus Spring/SOAP avec le
+JRE 21 d'Eclipse. Aucun JDK 17 n'était installé : son exécution n'a donc pas
+été validée.
 
-## Installation
+## Installation et configuration
 
-### Node.js backend
+### Backend Node.js
 
-From the repository root in PowerShell:
+Depuis la racine, dans PowerShell :
 
 ```powershell
 Set-Location .\backend
@@ -112,187 +102,146 @@ npm ci
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
-Edit `backend/.env` locally. Set a MongoDB URI, a strong `JWT_SECRET` of at
-least 32 UTF-8 bytes, and a Gemini key/model if AI generation is required. Do
-not commit or share the `.env` file.
+Renseignez localement `MONGODB_URI`, un `JWT_SECRET` robuste d'au moins
+32 octets UTF-8 et, pour la génération, les paramètres Gemini. Ne partagez
+pas et n'ajoutez pas `.env` à Git.
 
-### SOA modules
+### Configuration d'environnement
 
-The Maven Wrapper is under `soa/` and builds the three Maven reactor modules:
-
-```powershell
-Set-Location .\soa
-.\mvnw.cmd test
-```
-
-Set `JWT_SECRET` in each terminal used to launch Spring so it exactly matches
-the secret used by the Node backend. Set `NODE_API_BASE_URL` when Node is not
-using its default local address. Values can be entered into the current
-PowerShell session without adding them to a committed file:
-
-```powershell
-$env:JWT_SECRET = '<same local value as backend/.env>'
-$env:NODE_API_BASE_URL = 'http://127.0.0.1:3000/api/v1'
-```
-
-### Flutter
-
-```powershell
-Set-Location .\mobile
-flutter pub get
-```
-
-The Android emulator defaults to the host endpoints `10.0.2.2:3000` (Node)
-and `10.0.2.2:8081` (Spring). Configure alternate endpoints at build/run time
-with `--dart-define=API_BASE_URL=...` and `--dart-define=SOA_API_BASE_URL=...`.
-Do not put secrets in Dart defines.
-
-## Environment configuration
-
-The Node API loads `backend/.env` through its existing environment loader.
-`backend/.env.example` contains safe placeholders. Java services read process
-environment variables; `soa/.env.example` documents supported local settings
-but is not automatically loaded as a dotenv file.
-
-| Variable | Used by | Purpose |
+| Variable | Service | Rôle |
 | --- | --- | --- |
-| `MONGODB_URI` | Node | Existing MongoDB connection |
-| `JWT_SECRET` | Node and Spring | Shared HS256 token verification secret |
-| `GEMINI_API_KEY` | Node | Gemini API credential; never added to Flutter or SOA |
-| `GEMINI_MODEL` | Node | Configured Gemini primary model |
-| `GEMINI_FALLBACK_MODEL` | Node | Configured Gemini fallback model |
-| `NODE_API_BASE_URL` | Spring and SOAP | Node API base URL |
-| `SPRING_PORT` | Spring | REST port; default `8081` |
-| `SOAP_HOST`, `SOAP_PORT` | SOAP | Bind address and port; defaults `127.0.0.1:8082` |
-| `API_BASE_URL` | Flutter | Optional Node auth base URL, including `/api/v1` |
-| `SOA_API_BASE_URL` | Flutter | Optional Spring base URL |
+| `MONGODB_URI` | Node | URI de la base MongoDB |
+| `JWT_SECRET` | Node et Spring | Secret commun de vérification HS256 |
+| `GEMINI_API_KEY` | Node | Clé d'accès Gemini, jamais envoyée au mobile ou à Java |
+| `GEMINI_MODEL` | Node | Modèle Gemini principal |
+| `GEMINI_FALLBACK_MODEL` | Node | Modèle de repli |
+| `NODE_API_BASE_URL` | Spring et SOAP | URL de l'API Node versionnée |
+| `SPRING_PORT` | Spring | Port REST, `8081` par défaut |
+| `SOAP_HOST`, `SOAP_PORT` | SOAP | Adresse et port, `127.0.0.1:8082` par défaut |
+| `API_BASE_URL` | Flutter | URL facultative du backend Node |
+| `SOA_API_BASE_URL` | Flutter | URL facultative de Spring |
 
-## MongoDB configuration
+Le backend charge `backend/.env`. Les modules Java lisent les variables
+d'environnement du processus ; `soa/.env.example` décrit les paramètres sans
+être chargé automatiquement. Utilisez les fichiers d'exemple comme référence
+de configuration et ne remplacez pas une configuration locale existante.
 
-MongoDB remains owned by the Node backend. Configure `MONGODB_URI` in
-`backend/.env`; neither Java module has a MongoDB driver or creates a second
-database. Existing user, conversation, and message records are unchanged.
+### MongoDB et Gemini
 
-## Gemini configuration
+Node.js est le seul service qui se connecte à MongoDB et à Gemini. Les modules
+Java ne créent pas de base distincte. La commande `npm run diagnose:gemini`,
+lancée depuis `backend/`, effectue une requête réelle au fournisseur et peut
+consommer du quota ; les tests automatisés n'appellent pas Gemini.
 
-Gemini credentials and model settings belong only in the backend environment.
-The Node service uses the configured primary/fallback models and its bounded
-retry strategy. Check real model access with `npm run diagnose:gemini` from
-`backend/`. A successful mocked test does not establish that Google's API is
-available to a particular key or project.
+## Démarrage
 
-## Starting the services
-
-Start MongoDB first, then the Node backend:
+Démarrez MongoDB puis Node :
 
 ```powershell
 Set-Location .\backend
 npm start
 ```
 
-In another PowerShell terminal, configure the shared JWT secret and start the
-Spring façade:
+Pour Spring, installez d'abord les modules partagés du réacteur Maven. Dans un
+autre terminal PowerShell, configurez `JWT_SECRET` avec la même valeur que
+Node, sans l'enregistrer dans le dépôt, puis exécutez :
 
 ```powershell
-Set-Location .\soa\spring-rest
-$env:JWT_SECRET = '<same local value as backend/.env>'
+Set-Location .\soa
+.\mvnw.cmd -pl spring-rest -am install -DskipTests
+Set-Location .\spring-rest
+$secret = Read-Host 'Saisir le JWT_SECRET configuré pour Node' -AsSecureString
+$env:JWT_SECRET = [System.Net.NetworkCredential]::new('', $secret).Password
+Remove-Variable secret
 $env:NODE_API_BASE_URL = 'http://127.0.0.1:3000/api/v1'
 ..\mvnw.cmd spring-boot:run
 ```
 
-Start the SOAP endpoint after building/installing the shared Maven client:
+Pour SOAP :
 
 ```powershell
 Set-Location .\soa
 .\mvnw.cmd install -DskipTests
 Set-Location .\jaxws-soap
+$env:NODE_API_BASE_URL = 'http://127.0.0.1:3000/api/v1'
 ..\mvnw.cmd exec:java
 ```
 
-Spring REST is available at `http://localhost:8081`; Swagger UI is at
-`http://localhost:8081/swagger-ui.html`. SOAP publishes its WSDL at
-`http://localhost:8082/soap/hkili?wsdl`.
+Spring écoute par défaut sur `http://localhost:8081`. Le JSON OpenAPI est
+disponible sur `http://localhost:8081/v3/api-docs` et Swagger UI sur
+`http://localhost:8081/swagger-ui.html`. Le WSDL SOAP est publié à
+`http://localhost:8082/soap/hkili?wsdl` lorsque le service SOAP est lancé.
 
-Run the mobile app on an Android emulator:
+Lancer l'application Flutter :
 
 ```powershell
 Set-Location .\mobile
+flutter pub get
 flutter run
 ```
 
-## Running tests and analysis
+Pour l'émulateur Android, les adresses alternatives peuvent être indiquées
+explicitement avec
+`--dart-define=API_BASE_URL=http://10.0.2.2:3000/api/v1` et
+`--dart-define=SOA_API_BASE_URL=http://10.0.2.2:8081`. Ces variables sont des
+adresses de services, pas des emplacements pour des secrets.
+
+## API et services
+
+Les contrats détaillés se trouvent dans [docs/api.md](docs/api.md) et
+[docs/soa/README.md](docs/soa/README.md).
+
+| Service | Opération | Authentification |
+| --- | --- | --- |
+| Spring REST | `POST /chat` | Bearer JWT |
+| Spring REST | `GET /conversations` | Bearer JWT |
+| Spring REST | `GET /conversations/{id}` | Bearer JWT |
+| Spring REST | `PATCH /conversations/{id}` | Bearer JWT |
+| Spring REST | `DELETE /conversations/{id}` | Bearer JWT |
+| SOAP | `compterMots(texte)` | Aucune |
+| SOAP | `statistiques(idConversation)` | Bearer JWT |
+
+## Tests et génération Android
 
 ```powershell
 Set-Location .\backend
 npm test
-npm run diagnose:gemini
 
 Set-Location ..\mobile
 flutter analyze
 flutter test
+flutter build apk --debug
 
 Set-Location ..\soa
 .\mvnw.cmd test
+.\mvnw.cmd package
 ```
 
-`npm run diagnose:gemini` makes a real provider request and requires a valid
-locally configured key. Standard automated tests mock external Gemini calls.
+Lors de la dernière vérification, les 44 tests Node, les 14 tests Flutter,
+l'analyse statique et la génération de l'APK debug ont réussi. Maven a exécuté
+14 tests (10 Spring et 4 SOAP) et le packaging a réussi. Le JDK 17 n'étant pas
+disponible, ces résultats ne valident pas l'exécution sur cette version.
 
-## Building the Android APK
+L'APK debug est générée dans
+`mobile\build\app\outputs\flutter-apk\app-debug.apk`.
 
-```powershell
-Set-Location .\mobile
-flutter build apk --debug
-```
+## Sécurité et limites
 
-The debug APK is written under `mobile\build\app\outputs\flutter-apk\`.
+- Ne versionnez jamais `.env`, les secrets JWT/Gemini, les jetons ou les clés
+  de signature.
+- Flutter et Java ne reçoivent ni la clé Gemini ni l'URI MongoDB.
+- Node revalide chaque jeton et chaque propriété de conversation relayés par
+  Spring ou SOAP.
+- Une requête réelle Spring → Node → MongoDB → Gemini a retourné une réponse
+  et l'historique a ensuite contenu trois messages. D'autres sondes Gemini ont
+  rencontré un délai d'attente et une limite de quota ; la disponibilité varie.
+- L'application a été installée et lancée sur un émulateur, mais son parcours
+  utilisateur n'a pas été vérifié manuellement.
+- Le WSDL est produit à l'exécution par Metro.
+- Le mode invité reste local et n'enregistre pas de conversations côté serveur.
+- La configuration Android conserve l'identifiant de développement
+  `com.example.hkili_mobile` et la signature debug pour le type release ; aucune
+  version destinée à la distribution n'a été validée.
 
-## API documentation
-
-- [Node.js API](docs/api.md)
-- [SOA REST API and SOAP contract](docs/soa/README.md)
-- Swagger UI when Spring is running: `http://localhost:8081/swagger-ui.html`
-- SOAP WSDL when the SOAP service is running:
-  `http://localhost:8082/soap/hkili?wsdl`
-
-## Security considerations
-
-- Never commit `.env`, JWT secrets, Gemini keys, tokens, or signing files.
-- The mobile application never receives the Gemini key or MongoDB URI.
-- Java REST validates the shared bearer JWT; Node remains authoritative and
-  rechecks the token and conversation ownership for proxied requests.
-- SOAP statistics require and forward a bearer token; word counting uses only
-  the supplied text.
-- Use TLS and secret-management facilities outside local development.
-
-## Known limitations
-
-- The Java modules target Java 17, but this workspace's available compiler was
-  JDK 21; run and verify on JDK 17 before claiming that runtime compatibility.
-- At the last live diagnostic, Google's Models API listed 49 models supporting
-  `generateContent`, including the two configured names. Generation timed out
-  on `gemini-3.6-flash`; a separate `gemini-3.8-flash` probe returned HTTP 429
-  quota exhaustion. No real response was generated, so live AI operation is
-  not verified.
-- Automated tests use mocked Node/Gemini boundaries. A live Gemini request and
-  a complete Android-to-MongoDB run require local credentials, services, and an
-  emulator and are not implied by those tests.
-- Guest chat remains local and does not create persisted conversations.
-- SOAP WSDL is generated by Metro at runtime rather than checked in as a
-  generated static artifact.
-
-## Future improvements
-
-- Run a full JDK 17, Android emulator, MongoDB, and Gemini-backed end-to-end
-  validation in a configured environment.
-- Add CI jobs for Node, Flutter, and Maven.
-- Add reviewed screenshots and a verified deployment configuration.
-- Consider request correlation IDs and service-level metrics without logging
-  credentials or message contents.
-
-## Authors and academic context
-
-Author, institution, supervisor, and academic-year details have not been
-verified in this repository. Add them only after confirmation. A French report
-source with confirmation placeholders is available in
-[docs/rapport/rapport-soa.md](docs/rapport/rapport-soa.md).
+Les résultats détaillés et les limites de validation sont décrits dans
+[docs/soa/testing.md](docs/soa/testing.md).

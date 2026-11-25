@@ -1,15 +1,15 @@
-# Database
+# Base de données
 
-MongoDB is accessed only by the Node.js backend through Mongoose. Spring REST,
-the SOAP service, and Flutter do not open database connections or create
-parallel records.
+Seul le backend Node.js accède à MongoDB, au moyen de Mongoose. Flutter et
+les modules Spring REST et SOAP ne se connectent pas à la base et ne créent
+pas de copies des enregistrements.
 
-## Existing entities
+## Entités existantes
 
 ```mermaid
 erDiagram
-  USER ||--o{ CONVERSATION : owns
-  CONVERSATION ||--o{ MESSAGE : contains
+  USER ||--o{ CONVERSATION : possède
+  CONVERSATION ||--o{ MESSAGE : contient
   USER {
     ObjectId _id
     string email
@@ -36,33 +36,36 @@ erDiagram
   }
 ```
 
-### User
+### Utilisateur
 
-Email is lowercased and trimmed, unique, and limited to 254 characters.
-`passwordHash` is excluded from normal query selection and JSON output. The
-optional name is limited to 80 characters.
+L'adresse électronique est normalisée en minuscules, supprimée des espaces
+superflus et unique ; sa longueur maximale est de 254 caractères. Le champ
+`passwordHash` est exclu des sélections ordinaires et de la sérialisation JSON.
+Le nom facultatif est limité à 80 caractères.
 
 ### Conversation
 
-Each conversation has an `owner` ObjectId reference to a user, a required title
-up to 120 characters, `lastMessageAt`, and Mongoose timestamps. The compound
-index supports listing by owner and recency.
+Une conversation possède une référence `owner` de type ObjectId, un titre
+obligatoire de 120 caractères au plus, `lastMessageAt` et les horodatages
+Mongoose. Un index composé prend en charge le classement par propriétaire et
+date de mise à jour.
 
 ### Message
 
-Messages reference a conversation, use role `user` or `assistant`, and store
-trimmed content up to 10,000 characters with timestamps. The compound index
-supports chronological paging.
+Chaque message référence une conversation, contient le rôle `user` ou
+`assistant` et un texte nettoyé de 10 000 caractères au plus. Les horodatages
+et l'index composé prennent en charge le tri chronologique et la pagination.
 
-The API serializes ObjectIds as 24-character hexadecimal strings and presents
-references as `ownerId` / `conversationId`. Java services pass data through and
-do not map or persist these records independently.
+L'API sérialise les ObjectId sur 24 caractères hexadécimaux et expose les
+références sous les noms `ownerId` et `conversationId`. Les services Java
+transmettent les données sans les enregistrer dans un autre modèle.
 
-## Persistence flow
+## Persistance
 
-Node verifies user and conversation ownership before database access. A
-successful AI operation stores the user message and assistant reply in the
-existing conversation; failed generation does not persist a fabricated
-assistant response. Configure the database URI only in `backend/.env`.
+Node vérifie l'identité et la propriété de la conversation avant l'accès aux
+données. Une génération réussie enregistre les messages utilisateur et
+assistant dans la conversation existante ; une génération échouée ne crée pas
+de réponse assistant artificielle. L'URI MongoDB se configure uniquement dans
+`backend/.env`.
 
-No schema migration is required for the SOA extension.
+Aucune migration de schéma n'est requise pour l'extension SOA.

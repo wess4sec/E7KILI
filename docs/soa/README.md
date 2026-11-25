@@ -1,89 +1,89 @@
-# Hkili SOA Integration
+# Extension SOA de Hkili
 
-The SOA extension adds Java service interfaces around the existing Hkili
-backend. It is not a replacement backend: Node.js remains the only owner of
-authentication, Gemini calls, conversation rules, and MongoDB records.
+L'extension ajoute des interfaces Java au backend existant sans le remplacer.
+Node.js reste le seul propriétaire de l'authentification, des appels Gemini,
+des règles de conversation et des données MongoDB.
 
-## System boundaries
+## Architecture
 
 ```mermaid
 flowchart LR
-  Mobile[Flutter app] -->|login/register| Node[Node REST API]
-  Mobile -->|chat/history, Bearer JWT| Spring[Spring Boot REST façade]
-  Spring -->|forward same token| Node
-  SoapUI -->|SOAP + Bearer JWT| Metro[JAX-WS SOAP service]
-  Metro -->|forward same token| Node
-  Node --> Mongo[(Existing MongoDB)]
-  Node --> Gemini[Google Gemini API]
+  Flutter -->|Inscription et connexion| Node[API REST Node]
+  Flutter -->|Chat et historique, JWT| Spring[Façade REST Spring]
+  Spring -->|Transmission du même jeton| Node
+  SoapUI -->|SOAP, JWT pour les statistiques| Metro[Service JAX-WS]
+  Metro -->|Transmission du même jeton| Node
+  Node --> Mongo[(MongoDB existante)]
+  Node --> Gemini[Google Gemini]
 ```
 
-Spring validates the existing HS256 JWT using the same `JWT_SECRET` as Node.
-It then forwards the original bearer token so Node independently verifies
-signature, expiry, user, and conversation ownership. SOAP statistics also
-forward the caller's bearer token. No Java service has a MongoDB or Gemini
-connection.
+Spring vérifie le jeton HS256 existant puis le transmet à Node, qui vérifie à
+nouveau sa validité et la propriété des conversations. SOAP utilise le même
+backend. Aucun module Java ne se connecte à MongoDB ou à Gemini.
 
-Flutter registration and login remain on Node. Authenticated chat, listing,
-history, rename, and delete use Spring; guest chat remains the existing local
-flow. The Flutter base URLs are configurable using `API_BASE_URL` and
-`SOA_API_BASE_URL` Dart defines.
+L'inscription et la connexion Flutter restent sur Node. Le chat authentifié,
+l'historique, le renommage et la suppression passent par Spring. Le mode invité
+reste local. Les adresses Flutter peuvent être configurées au moyen des
+variables Dart `API_BASE_URL` et `SOA_API_BASE_URL`.
 
 ## Modules
 
-| Module | Responsibility |
+| Module | Responsabilité |
 | --- | --- |
-| `soa/common-client` | Typed Java interface and HTTP client for the Node API |
-| `soa/spring-rest` | Spring Boot REST façade, JWT verification and OpenAPI UI |
-| `soa/jaxws-soap` | Metro SOAP endpoint; delegates real data access to Node |
+| `soa/common-client` | Client HTTP partagé pour l'API Node |
+| `soa/spring-rest` | Façade Spring Boot, validation JWT et documentation OpenAPI |
+| `soa/jaxws-soap` | Service SOAP Metro, données relayées à Node |
 
-The parent Maven reactor is `soa/pom.xml`. Its Maven Wrapper is the supported
-build entry point.
+Le réacteur Maven et son wrapper se trouvent dans `soa/`.
 
-## Prerequisites and environment
+## Prérequis et configuration
 
-- JDK 17 for supported runtime use (the Maven compiler targets release 17).
-- The wrapper downloads Maven 3.9.9 on first use; no global Maven installation
-  is needed.
-- A running Node backend configured with MongoDB and a matching JWT secret.
-- `JWT_SECRET` exactly matching the value used by Node.
-- `NODE_API_BASE_URL`, default `http://127.0.0.1:3000/api/v1`.
+- JDK 17 pour l'exécution prise en charge ; le compilateur cible la version 17.
+- Accès Internet lors du premier usage du wrapper Maven 3.9.9.
+- Backend Node configuré et connecté à MongoDB.
+- `JWT_SECRET` identique dans Node et Spring.
+- `NODE_API_BASE_URL`, par défaut `http://127.0.0.1:3000/api/v1`.
 
-The current working environment did not contain JDK 17. Maven tests were
-compiled with JDK 21 using `--release 17`; validate runtime behavior using an
-installed JDK 17 before deployment. `soa/.env.example` contains only safe,
-non-secret example values and is not automatically loaded by Java.
+Le JDK 17 n'était pas disponible lors de la vérification : les tests et le
+packaging Maven ont été exécutés avec le JDK 25 d'IntelliJ, et les services
+live avec le JRE 21 d'Eclipse. L'exécution sur JDK 17 reste à valider.
+`soa/.env.example` contient uniquement des valeurs d'exemple non sensibles ;
+Java ne le charge pas automatiquement.
 
-## Build and test
-
-From PowerShell:
+## Tests Maven
 
 ```powershell
 Set-Location .\soa
 .\mvnw.cmd test
 ```
 
-The tests mock the Node API boundary. They do not prove a running Node,
-MongoDB, Android emulator, or Gemini provider connection.
+Les tests automatisés simulent la frontière Node. Ils n'établissent pas à eux
+seuls la disponibilité de MongoDB ou de Gemini. Les résultats d'intégration
+réelle sont consignés dans [testing.md](testing.md).
 
-## Start Spring REST
+## Démarrage de Spring REST
 
-Start Node first. In a separate PowerShell terminal:
+Démarrez Node avant Spring. Dans un terminal PowerShell :
 
 ```powershell
-Set-Location .\soa\spring-rest
-$env:JWT_SECRET = '<same local value as backend/.env>'
+Set-Location .\soa
+.\mvnw.cmd -pl spring-rest -am install -DskipTests
+Set-Location .\spring-rest
+$secret = Read-Host 'Saisir le JWT_SECRET configuré pour Node' -AsSecureString
+$env:JWT_SECRET = [System.Net.NetworkCredential]::new('', $secret).Password
+Remove-Variable secret
 $env:NODE_API_BASE_URL = 'http://127.0.0.1:3000/api/v1'
 ..\mvnw.cmd spring-boot:run
 ```
 
-Defaults: REST `http://localhost:8081`, OpenAPI JSON
-`http://localhost:8081/v3/api-docs`, Swagger UI
-`http://localhost:8081/swagger-ui.html`. Set `SPRING_PORT` to change the REST
+Par défaut, REST écoute sur `http://localhost:8081`. Le document OpenAPI est
+publié à `http://localhost:8081/v3/api-docs` et Swagger UI à
+`http://localhost:8081/swagger-ui.html`. `SPRING_PORT` permet de changer le
 port.
 
-## Start SOAP
+## Démarrage du service SOAP
 
-Install the Java modules to the local Maven repository once, then launch Metro:
+Installez les modules du réacteur, puis lancez Metro :
 
 ```powershell
 Set-Location .\soa
@@ -93,33 +93,38 @@ $env:NODE_API_BASE_URL = 'http://127.0.0.1:3000/api/v1'
 ..\mvnw.cmd exec:java
 ```
 
-The default endpoint is `http://127.0.0.1:8082/soap/hkili`; the generated WSDL
-is at `http://127.0.0.1:8082/soap/hkili?wsdl`. Configure its bind address with
-`SOAP_HOST` and port with `SOAP_PORT`.
+Le point d'accès par défaut est `http://127.0.0.1:8082/soap/hkili`. Le WSDL
+est généré à l'exécution et accessible à
+`http://127.0.0.1:8082/soap/hkili?wsdl`. `SOAP_HOST` et `SOAP_PORT` règlent
+l'adresse d'écoute.
 
-### SoapUI
+### Utilisation dans SoapUI
 
-1. Start the SOAP service.
-2. In SoapUI, create a SOAP project from
-   `http://127.0.0.1:8082/soap/hkili?wsdl`.
-3. Use the generated `compterMots` request without authentication.
-4. For `statistiques`, add an HTTP header named `Authorization` with value
-   `Bearer <existing Hkili JWT>`. Never save a real token in a committed
-   project file.
+1. Démarrez le service SOAP.
+2. Créez un projet SoapUI à partir du WSDL indiqué ci-dessus.
+3. Exécutez `compterMots` sans authentification.
+4. Pour `statistiques`, ajoutez dans l'en-tête HTTP `Authorization` un jeton
+   émis par un compte Hkili existant. Ne sauvegardez pas le jeton dans un
+   fichier versionné.
 
-Example request envelopes are in [soapui/](soapui/).
+Les enveloppes de requête sont dans [soapui/](soapui/). La requête de
+statistiques contient un identifiant d'exemple ; utilisez l'identifiant d'une
+conversation existante pour une réponse réelle. La
+[collection Postman](soapui/postman_collection.json) vérifie OpenAPI et le
+rejet des routes protégées sans authentification ; elle ne contient aucun
+secret ni identifiant de compte.
 
-## API contracts
+## Contrats
 
-- [Spring REST routes, JSON shapes, and errors](rest-api.md)
-- [SOAP operations, WSDL, and faults](soap.md)
-- [Testing and runtime verification notes](testing.md)
+- [API REST Spring](rest-api.md)
+- [Service SOAP](soap.md)
+- [Tests et preuves d'intégration](testing.md)
 
-## Limitations
+## Limites techniques
 
-- SOAP WSDL is generated by Metro at runtime and requires the SOAP service to
-  be running.
-- Conversation statistics retrieve real message pages through Node, capped at
-  100 messages/page and 1,000 pages per operation.
-- Local test suites mock external service calls; full-flow verification
-  requires configured local services and credentials.
+- Le WSDL n'est disponible que lorsque Metro est démarré.
+- Les statistiques parcourent les pages Node de 100 messages au plus, jusqu'à
+  1 000 pages par opération.
+- Le parcours Flutter manuel n'a pas été vérifié sur l'émulateur ; les tests
+  automatisés Flutter et l'intégration live Java → Node sont décrits
+  séparément dans [testing.md](testing.md).

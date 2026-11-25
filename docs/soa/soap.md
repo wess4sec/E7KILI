@@ -1,19 +1,19 @@
-# JAX-WS SOAP Service
+# Service SOAP JAX-WS
 
-The `jaxws-soap` Maven module uses Jakarta JAX-WS and Eclipse Metro 4.0.3. It
-publishes a SOAP 1.1 endpoint and generates its WSDL at runtime.
+Le module Maven `jaxws-soap` utilise Jakarta JAX-WS et Eclipse Metro 4.0.3. Il
+publie un service SOAP 1.1 et produit le WSDL au démarrage.
 
-Default endpoint: `http://127.0.0.1:8082/soap/hkili`
-WSDL: `http://127.0.0.1:8082/soap/hkili?wsdl`
-Target namespace: `urn:hkili:soa`
+- Point d'accès par défaut : `http://127.0.0.1:8082/soap/hkili`
+- WSDL : `http://127.0.0.1:8082/soap/hkili?wsdl`
+- Espace de noms : `urn:hkili:soa`
 
 ## `compterMots(texte)`
 
-Counts tokens separated by Unicode whitespace. Empty or whitespace-only text
-returns zero. Punctuation is not stripped from tokens. This operation
-processes only the supplied text and does not require authentication.
+Compte les éléments séparés par des espaces Unicode. Un texte vide ou
+composé uniquement d'espaces produit zéro. La ponctuation n'est pas retirée.
+L'opération traite le texte transmis et ne requiert pas d'authentification.
 
-Example SOAP 1.1 body:
+Exemple de corps SOAP 1.1 :
 
 ```xml
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
@@ -26,36 +26,35 @@ Example SOAP 1.1 body:
 </soap:Envelope>
 ```
 
-The response contains an integer return value.
+La réponse SOAP contient une valeur entière.
 
 ## `statistiques(idConversation)`
 
-Requires the HTTP header:
+Cette opération requiert un en-tête HTTP `Authorization` portant un jeton
+Bearer Hkili valide. Le client obtient ce jeton en se connectant à Node ; aucun
+secret ni jeton n'est fourni dans les fichiers du dépôt.
 
-```http
-Authorization: Bearer <existing Hkili JWT>
-```
+Le service demande à Node la conversation et ses messages réels. Node vérifie
+l'identité et la propriété. Le résultat comprend l'identifiant et le titre de
+la conversation, le nombre total de messages, les nombres de messages par rôle
+et la moyenne de mots par message arrondie à deux décimales.
 
-The service requests the conversation and its actual messages from Node using
-the bearer token. Node validates the user and conversation ownership. The
-service returns:
-
-- Conversation ID and stored title.
-- Total message count and user/assistant message counts.
-- Average words per message, rounded to two decimal places.
-
-Messages are fetched in ascending pages of 100, up to 1,000 pages. An invalid
-ObjectId is a client SOAP fault. Missing/expired tokens, ownership denial,
-missing conversations, rate limiting, and upstream unavailability map to
-sanitized SOAP faults; provider details and tokens are not disclosed.
+Le service lit des pages de 100 messages au plus, jusqu'à 1 000 pages. Un
+ObjectId invalide est une faute SOAP cliente. Jeton absent ou expiré, refus de
+propriété, conversation inexistante, limite de débit et indisponibilité amont
+produisent des fautes SOAP filtrées. Les secrets et détails du fournisseur ne
+sont pas renvoyés.
 
 ## SoapUI
 
-Import the runtime WSDL as a new SoapUI project. For `statistiques`, add the
-`Authorization` header to the HTTP request. The sample
-[statistics request](soapui/statistiques-request.xml) uses a deliberately
-non-secret token marker; replace it locally with a valid token.
+Importez le WSDL accessible lorsque Metro est démarré. Pour `statistiques`,
+ajoutez le jeton du compte de test dans l'en-tête HTTP de la requête ; ne
+l'enregistrez pas dans le dépôt. Le fichier
+[statistiques-request.xml](soapui/statistiques-request.xml) contient le corps
+SOAP et un identifiant d'exemple au format ObjectId ; pour obtenir une réponse
+réelle, utilisez l'identifiant d'une conversation existante.
 
-The WSDL is verified by an automated test that starts a local Metro endpoint
-and checks both operation names and the namespace. Runtime publication still
-needs to be checked in a local Java 17 environment.
+Les tests automatisés démarrent un endpoint Metro local et vérifient le WSDL
+et les deux opérations avec des données de test. Une vérification live a
+également calculé les statistiques d'une conversation temporaire réellement
+persistée.
