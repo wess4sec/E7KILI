@@ -1,11 +1,11 @@
 {
-    "name": "hkili_mobile",
-    "short_name": "hkili_mobile",
+    "name": "Hkili",
+    "short_name": "Hkili",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Assistant conversationnel inspiré de la culture tunisienne.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

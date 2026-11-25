@@ -1,111 +1,82 @@
-# Spring REST API
+# API REST Spring
 
-The Spring Boot REST façade listens on port `8081` by default. It forwards
-requests to the existing Node API and does not own application records.
+La façade Spring Boot écoute sur le port `8081` par défaut. Elle relaie les
+opérations à l'API Node existante et ne possède pas ses propres données.
 
-All routes below require `Authorization: Bearer <existing Hkili JWT>`. Spring
-verifies the HS256 signature, expiry, and 24-hex Mongo ObjectId `sub` using the
-shared `JWT_SECRET`. Node receives and independently validates the same token,
-including conversation ownership.
+Les routes métier exigent un jeton Bearer Hkili. Spring vérifie la signature
+HS256, l'expiration et le sujet ObjectId avec le `JWT_SECRET` partagé. Node
+reçoit le même jeton et vérifie à nouveau l'identité et la propriété des
+conversations.
 
-OpenAPI JSON: `GET /v3/api-docs`
-Swagger UI: `GET /swagger-ui.html`
+- JSON OpenAPI : `GET /v3/api-docs`
+- Swagger UI : `GET /swagger-ui.html`
+
+Le jeton utilisé doit provenir de l'inscription ou de la connexion auprès de
+Node ; aucun jeton n'est inclus dans la documentation.
 
 ## `POST /chat`
 
-Sends a user message and returns the persisted user/assistant pair after Node
-successfully generates the assistant response.
+Envoie un message utilisateur. Après une génération Gemini réussie, Node
+persiste le message utilisateur et la réponse assistant. Le client reçoit
+`201 Created`.
 
-Request:
+Corps JSON :
 
 ```json
 {
   "message": "Aaslema Hkili",
-  "conversationId": "6740b02a38e91d0e12345679",
-  "title": "Optional title for a new conversation"
+  "title": "Titre facultatif pour une nouvelle conversation"
 }
 ```
 
-`message` is required and limited to 10,000 characters. `conversationId` is
-optional and must be a 24-character hexadecimal ObjectId. `title` is optional,
-maximum 120 characters, and used only when creating a conversation.
+`message` est requis et limité à 10 000 caractères. `conversationId` est
+facultatif et doit être un ObjectId hexadécimal de 24 caractères. `title` est
+facultatif, limité à 120 caractères et utilisé uniquement lors de la création
+d'une conversation. En l'absence de titre, Spring utilise les 60 premiers
+points de code du message pour créer le titre.
 
-Success: `201 Created`
-
-```json
-{
-  "conversationId": "6740b02a38e91d0e12345679",
-  "conversationTitle": "Aaslema Hkili",
-  "userMessage": {
-    "id": "6740b04c38e91d0e12345680",
-    "conversationId": "6740b02a38e91d0e12345679",
-    "role": "user",
-    "content": "Aaslema Hkili",
-    "createdAt": "2026-11-25T16:30:00.000Z"
-  },
-  "assistantMessage": {
-    "id": "6740b04c38e91d0e12345681",
-    "conversationId": "6740b02a38e91d0e12345679",
-    "role": "assistant",
-    "content": "Aaslema !",
-    "createdAt": "2026-11-25T16:30:01.000Z"
-  }
-}
-```
-
-The IDs and messages above illustrate the JSON structure; they are not seed
-records. A new conversation is created by Node before generation. Node persists
-the user and assistant messages only after successful generation. If generation
-fails, Flutter retains the unsent draft; a newly created empty conversation may
-remain in Node.
+La réponse `201` contient `conversationId`, `conversationTitle`,
+`userMessage` et `assistantMessage`. Chaque message comprend son identifiant,
+celui de la conversation, son rôle, son contenu et sa date de création. Il
+s'agit du contrat documenté ; les valeurs varient selon la requête réelle.
+Spring demande d'abord à Node de créer la conversation, puis lui demande de
+générer le message. Si la génération échoue, Flutter conserve le texte non
+envoyé et la conversation vide peut rester persistée par Node.
 
 ## `GET /conversations`
 
-Lists conversations from Node, with query parameters `page` (default `1`) and
-`limit` (default `20`, maximum `100`). Returns the Node JSON envelope:
+Liste les conversations du compte via Node. Les paramètres sont `page` (défaut
+1) et `limit` (défaut 20, maximum 100). Réponse `200` contenant `conversations`
+et `pagination`.
 
-```json
-{
-  "conversations": [],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 0,
-    "totalPages": 0
-  }
-}
-```
+## Routes utilisées par l'historique Flutter
 
-## History compatibility routes
+- `GET /conversations/{id}?page=1&limit=50` renvoie la conversation, les
+  messages et les métadonnées de pagination de Node.
+- `PATCH /conversations/{id}` avec un corps JSON contenant `title` renomme la
+  conversation par l'intermédiaire de Node.
 
-Flutter history also uses these routes:
-
-- `GET /conversations/{id}?page=1&limit=50` returns Node's conversation,
-  messages, and pagination envelope.
-- `PATCH /conversations/{id}` with `{"title":"Updated title"}` renames through
-  Node.
-
-Both require the same bearer token and Node enforces ownership.
+Ces opérations exigent le même jeton ; Node vérifie la propriété.
 
 ## `DELETE /conversations/{id}`
 
-Deletes through Node, which enforces ownership and removes the conversation
-and its associated messages. Returns `204 No Content`.
+Supprime par Node la conversation et ses messages associés. Réponse
+`204 No Content`.
 
-## Errors
+## Erreurs
 
-Errors use:
+L'enveloppe JSON contient `error.code` et `error.message`. La façade utilise
+les statuts suivants :
 
-```json
-{
-  "error": {
-    "code": "SERVICE_UNAVAILABLE",
-    "message": "The AI service is temporarily unavailable"
-  }
-}
-```
+| Statut | Signification |
+| --- | --- |
+| `400` | Validation de requête échouée |
+| `401` | Jeton absent, invalide ou expiré |
+| `403` | Conversation appartenant à un autre compte |
+| `404` | Ressource inexistante |
+| `429` | Limite de débit ou quota renvoyé par Node/Gemini |
+| `502` | Réponse amont invalide |
+| `503` | API Node indisponible |
+| `504` | Délai d'attente amont dépassé |
 
-The façade maps validation to `400`, authentication to `401`, ownership denial
-to `403`, missing records to `404`, rate limits to `429`, Node unavailability
-to `503`, timeouts to `504`, and invalid upstream responses to `502`. Raw Node
-or Gemini messages are not returned.
+Les messages bruts de Node ou Gemini ne sont pas transmis au client.

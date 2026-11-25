@@ -1,39 +1,40 @@
-# User Guide
+# Guide d'utilisation
 
-## Sign in
+## Connexion
 
-Open Hkili and choose the sign-in or registration flow. Authenticated account
-creation and login use the Node backend. The session token is stored by the
-mobile application and sent as a Bearer token for protected service requests.
+Ouvrez Hkili et choisissez la connexion ou l'inscription. L'authentification
+passe par le backend Node. L'application conserve le jeton dans son stockage
+sécurisé et le transmet aux services protégés sous forme de jeton Bearer.
 
-## Guest mode
+## Mode invité
 
-Guest mode opens the existing local demonstration chat. It does not create
-server conversations or persist messages in MongoDB.
+Le mode invité ouvre le chat local de démonstration. Il ne crée pas de
+conversation côté serveur et ne persiste pas les messages sur l'appareil ;
+ils ne sont conservés qu'en mémoire pendant la session.
 
 ## Chat
 
-For an authenticated session, enter a message and submit it. Flutter sends the
-request to the Spring REST façade; Spring validates the token and forwards the
-request to Node. Node handles persistence and Gemini generation. A temporary
-service error is shown in French; the composer retains the text so it can be
-retried.
+Dans une session authentifiée, saisissez un message puis envoyez-le. Flutter
+transmet la demande à la façade REST Spring, qui vérifie le jeton et relaie la
+demande à Node. Node gère la persistance et la génération Gemini. En cas
+d'erreur temporaire, l'application affiche un message en français et conserve
+le texte saisi.
 
-## Conversation history
+## Historique des conversations
 
-Use the history screen to list conversations and open their messages. Available
-actions include renaming and deleting a conversation. Node enforces that the
-authenticated account owns the selected conversation.
+L'écran d'historique permet de consulter les conversations et leurs messages,
+de modifier leur titre et de les supprimer. Node vérifie que le compte
+authentifié possède la conversation.
 
-## Profile and logout
+## Profil et déconnexion
 
-The profile displays the signed-in account details. Logging out clears the
-locally stored token. Login, history, and chat behavior require the backend
-services to be running.
+Le profil affiche les informations du compte connecté. La déconnexion supprime
+le jeton conservé localement. Les fonctions de connexion, d'historique et de
+chat authentifié nécessitent les services backend en fonctionnement.
 
-## Service documentation
+## Interfaces de service
 
-Administrators and testers can view Spring's Swagger UI at
-`http://localhost:8081/swagger-ui.html` and import the SOAP WSDL at
-`http://localhost:8082/soap/hkili?wsdl`. SOAP statistics require a valid
-existing Hkili bearer token.
+Swagger UI est disponible à `http://localhost:8081/swagger-ui.html` lorsque
+Spring est lancé. Le WSDL SOAP est publié à
+`http://localhost:8082/soap/hkili?wsdl`. L'opération SOAP `statistiques`
+nécessite un jeton Hkili valide.

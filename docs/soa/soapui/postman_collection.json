@@ -1,50 +1,80 @@
 {
   "info": {
     "_postman_id": "d4a3d8b8-3df5-4db4-b781-5b0a4c554a72",
-    "name": "Hkili Spring REST",
+    "name": "Hkili — contrôles REST sans secret",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Spring façade requests. Set a valid Hkili bearer token locally."
+    "description": "Vérifie l'accès OpenAPI et le rejet des requêtes métier sans authentification. Aucun jeton ni identifiant de compte n'est enregistré."
   },
-  "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8081" },
-    { "key": "token", "value": "" },
-    { "key": "conversationId", "value": "" }
-  ],
   "item": [
     {
-      "name": "Send chat message",
+      "name": "Document OpenAPI",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8081/v3/api-docs"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('OpenAPI est accessible', function () {",
+              "  pm.response.to.have.status(200);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rejeter la liste sans jeton",
+      "request": {
+        "method": "GET",
+        "url": "http://localhost:8081/conversations"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('La route protégée renvoie 401', function () {",
+              "  pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rejeter le chat sans jeton",
       "request": {
         "method": "POST",
         "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" },
-          { "key": "Content-Type", "value": "application/json" }
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
         ],
         "body": {
           "mode": "raw",
           "raw": "{\n  \"message\": \"Aaslema Hkili\"\n}"
         },
-        "url": "{{baseUrl}}/chat"
-      }
-    },
-    {
-      "name": "List conversations",
-      "request": {
-        "method": "GET",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
-        ],
-        "url": "{{baseUrl}}/conversations?page=1&limit=20"
-      }
-    },
-    {
-      "name": "Delete conversation",
-      "request": {
-        "method": "DELETE",
-        "header": [
-          { "key": "Authorization", "value": "Bearer {{token}}" }
-        ],
-        "url": "{{baseUrl}}/conversations/{{conversationId}}"
-      }
+        "url": "http://localhost:8081/chat"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Le chat protégé renvoie 401', function () {",
+              "  pm.response.to.have.status(401);",
+              "});"
+            ]
+          }
+        }
+      ]
     }
   ]
 }

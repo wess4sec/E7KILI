@@ -1,15 +1,28 @@
-# Hkili Mobile
+# Application mobile Hkili
 
-The Flutter prototype includes a welcome screen, a local mock chat, and
-Accueil / Historique / Profil navigation. The chat is not connected to the
-backend: messages exist only in memory and replies come from
-`MockChatService`.
+L'application Flutter fournit l'accueil, l'inscription, la connexion, le mode
+invité, le chat, l'historique et le profil.
 
-Run locally with:
+L'inscription et la connexion utilisent l'API Node. Pour un compte
+authentifié, le chat et l'historique passent par la façade Spring ; les
+conversations restent enregistrées par Node dans MongoDB. Le mode invité
+utilise un chat local de démonstration conservé uniquement en mémoire pendant
+la session, sans persistance locale ni serveur.
 
-```shell
+Depuis `mobile/`, installez les dépendances et lancez l'application :
+
+```powershell
 flutter pub get
-flutter run -d <device-id>
+flutter run
 ```
 
-Run the mobile checks with `flutter analyze` and `flutter test`.
+Les contrôles mobiles sont :
+
+```powershell
+flutter analyze
+flutter test
+```
+
+Les adresses des API sont définies dans
+`lib/services/api_config.dart` et peuvent être remplacées par les variables
+Dart `API_BASE_URL` et `SOA_API_BASE_URL`.

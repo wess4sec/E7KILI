@@ -1,23 +1,9 @@
-# Rapport de conception et de réalisation de Hkili
-
-> **Document source à relire avant dépôt.** Les champs entre crochets doivent
-> être confirmés par l'étudiant et l'établissement. Les résultats décrivent
-> uniquement les vérifications réellement exécutées dans ce dépôt. Aucun PDF
-> n'est généré à ce stade.
+# Conception et intégration de services REST et SOAP pour l'application mobile Hkili
 
 ## Page de garde
 
-- **Établissement :** [À confirmer]
-- **Département / filière :** [À confirmer]
-- **Intitulé :** Conception et intégration de services REST et SOAP pour
-  l'application mobile Hkili
-- **Réalisé par :** [Nom et prénom à confirmer]
-- **Encadré par :** [Nom à confirmer]
-- **Année universitaire :** [À confirmer]
-
-## Remerciements
-
-[Section facultative à rédiger et à valider par l'auteur.]
+**Conception et intégration de services REST et SOAP pour l'application mobile
+Hkili**
 
 ## Résumé
 
@@ -38,20 +24,6 @@ disponibilité de Gemini ou d'un déploiement complet.
 **Mots-clés :** Flutter, Node.js, Spring Boot, REST, SOAP, JAX-WS, JWT, MongoDB,
 Gemini, SOA.
 
-## Abstract
-
-Hkili is a Tunisian-inspired conversational mobile application built with
-Flutter, a Node.js/Express API, MongoDB, and Google Gemini text generation. This
-project adds a service-oriented extension consisting of a Spring Boot REST
-façade and a Java JAX-WS SOAP service. Both Java services reuse the existing
-Node API so authentication, conversation ownership, persistence, and AI
-generation remain centralized.
-
-The REST façade provides authenticated chat and conversation-history
-operations. The SOAP service exposes word counting and statistics calculated
-from real conversation messages. Automated tests isolate external services;
-they do not prove live Gemini availability or full deployment behavior.
-
 ## Table des matières
 
 1. Introduction générale
@@ -68,7 +40,7 @@ they do not prove live Gemini availability or full deployment behavior.
 12. Intégration de Gemini
 13. Sécurité
 14. Tests et validation
-15. Démonstration
+15. Preuves techniques
 16. Difficultés, limites et perspectives
 17. Conclusion
 18. Références et annexes
@@ -266,10 +238,10 @@ français filtré est affiché.
 ## 12. Intégration de Gemini
 
 La clé et les modèles Gemini restent configurés côté Node. Spring et SOAP
-n'appellent pas le fournisseur. Les retries, les modèles primaire/secondaire
-et la traduction des erreurs sont ceux du service Node existant. Une réponse
-réelle de Gemini doit être prouvée par un diagnostic exécuté avec une clé
-configurée ; les tests Java et Flutter n'en fournissent pas la preuve.
+n'appellent pas directement le fournisseur. Les reprises, les modèles
+primaire/secondaire et la traduction des erreurs sont gérés par le service
+Node. Une requête live `POST /chat` a produit une réponse réelle ; les tests
+automatisés Java et Flutter utilisent toutefois des services simulés.
 
 ## 13. Sécurité
 
@@ -293,38 +265,79 @@ Bearer, le traitement des erreurs et la conservation du brouillon.
 
 **Résultats vérifiés dans cet environnement :**
 
+- `npm test`, `flutter analyze` et `flutter test` ont été relancés le
+  25 novembre 2026 pendant l'audit documentaire : résultats inchangés.
+- Les tests Maven et les builds APK/Web mentionnés ci-dessous proviennent de
+  la campagne d'intégration antérieure et n'ont pas été rejoués pendant cet
+  audit documentaire.
 - `npm test` : 44 tests réussis, aucun échec (inclut les changements CORS/Web
   présents dans le worktree au moment de l'exécution).
 - `flutter test` : 14 tests réussis ; `flutter analyze` : aucune anomalie.
 - `flutter build apk --debug` : build réussi.
+- `flutter build web` : build réussi ; Flutter a signalé des avertissements de
+  compatibilité du test Wasm et de police CupertinoIcons.
 - `soa/mvnw.cmd test` : 14 tests réussis (10 Spring, 4 SOAP). Le packaging Maven
   complet s'est également terminé avec le code de sortie 0.
-- Le wrapper a exécuté Maven 3.9.9 avec Java 21.0.10 ; le compilateur cible
-  Java 17 (`--release 17`). Un runtime JDK 17 n'a donc pas été vérifié.
+- Maven 3.9.9 a exécuté les tests et le packaging avec le JDK 25 fourni par
+  IntelliJ ; le compilateur cible Java 17 (`--release 17`). Les processus
+  Spring et SOAP de l'essai réel ont utilisé le JRE 21 d'Eclipse. Le JDK 17
+  n'étant pas installé, son exécution n'a pas été vérifiée.
+- Une première tentative Maven avec le Java 8 par défaut a échoué avant
+  l'exécution des tests, car ce runtime ne sait pas charger les classes Java
+  17. Les mêmes commandes ont ensuite réussi en sélectionnant explicitement
+  le JDK 25 d'IntelliJ dans le processus PowerShell.
 - Le Models API Gemini a répondu HTTP 200 et a annoncé 49 modèles compatibles
   avec `generateContent`. Les modèles configurés au moment du diagnostic
   étaient `gemini-3.6-flash` et `gemini-3.8-flash`, tous deux déclarés
   compatibles par cette API.
 - La requête réelle minimale a expiré (504) sur le modèle primaire
   `gemini-3.6-flash`. Un essai diagnostique ponctuel sur
-  `gemini-3.8-flash` a renvoyé HTTP 429 `RESOURCE_EXHAUSTED`. Aucun texte réel
-  n'a été généré durant ces vérifications.
-- Un émulateur Android était détecté, mais le parcours authentifié complet
-  n'a pas été lancé ; aucune persistance réelle de bout en bout n'est affirmée.
+  `gemini-3.8-flash` a renvoyé HTTP 429 `RESOURCE_EXHAUSTED`. Ces sondes n'ont
+  pas généré de texte réel.
+- Une vérification ultérieure par Spring `POST /chat` a répondu HTTP 201 avec
+  les identifiants du message utilisateur et du message assistant ; l'historique
+  de la conversation contenait ensuite trois messages. Cette requête réelle a
+  produit une réponse Gemini et l'a persistée via Node/MongoDB. Les erreurs
+  504 et 429 précédentes montrent que la disponibilité du fournisseur reste
+  variable.
+- Des comptes et une conversation temporaires ont permis de vérifier la
+  persistance via Node, la lecture via Spring, le refus inter-utilisateur (403)
+  et les statistiques SOAP calculées sur les données enregistrées. Les
+  enregistrements temporaires ont été supprimés après le test.
+- Le renommage via Spring a répondu HTTP 200 et le nouveau titre a été retrouvé
+  dans la liste ; la suppression a répondu HTTP 204 et Node a ensuite confirmé
+  l'absence de la conversation (HTTP 404). Les données temporaires ont été
+  supprimées après l'essai.
+- L'APK a été installée et lancée sur l'émulateur Android détecté. L'interaction
+  avec l'interface n'a pas été réalisée ; le parcours Flutter authentifié ou
+  invité de bout en bout n'est donc pas affirmé.
 
 Ces tests automatisés valident les contrats simulés, pas la disponibilité
-actuelle de Gemini, le fonctionnement sur JDK 17, ni l'ensemble mobile →
-Spring → Node → MongoDB.
+continue de Gemini, le fonctionnement sur JDK 17, ni le parcours Flutter mobile
+complet. La chaîne réelle Spring → Node → MongoDB → Gemini a toutefois été
+exercée avec une réponse réussie.
 
-## 15. Démonstration des fonctionnalités
+## 15. Preuves techniques
 
-<!-- Capture à ajouter après essai réel : accueil et authentification -->
-<!-- Capture à ajouter après essai réel : conversation persistée -->
-<!-- Capture à ajouter après essai réel : Swagger UI -->
-<!-- Capture à ajouter après essai réel : appel statistiques dans SoapUI -->
+Les contrôles suivants ont été exécutés sur des données temporaires, ensuite
+supprimées :
 
-Les captures doivent provenir d'une exécution réelle et ne doivent pas afficher
-de jeton, secret ou donnée personnelle.
+| Vérification | Résultat observé |
+| --- | --- |
+| OpenAPI JSON et Swagger UI Spring | HTTP 200 |
+| Accès REST sans jeton ou avec jeton invalide | HTTP 401 |
+| WSDL JAX-WS généré par Metro | HTTP 200 |
+| SOAP `compterMots` sur trois mots | HTTP 200, résultat `3` |
+| Lecture Spring d'une conversation persistée par Node | HTTP 200 |
+| Accès à cette conversation par un autre compte | HTTP 403 |
+| Renommage par Spring | HTTP 200, nouveau titre présent dans la liste |
+| Suppression par Spring, confirmation par Node | HTTP 204, puis HTTP 404 |
+| SOAP `statistiques` sur un message réel | 1 message, 1 utilisateur, 0 assistant, moyenne de 3,00 mots |
+| Spring `POST /chat` relayé à Node, MongoDB et Gemini | HTTP 201 ; l'historique contenait ensuite 3 messages |
+
+L'APK Android a été installée et lancée sur l'émulateur. L'interface n'a pas
+été manipulée ; aucun parcours mobile complet n'est revendiqué. La chaîne
+Java → Node → MongoDB → Gemini a, elle, été exercée en direct.
 
 ## 16. Difficultés, limites et perspectives
 
@@ -335,31 +348,32 @@ la délégation aux routes Node permettent de maintenir une source unique.
 Limites connues :
 
 - Le JDK 17 n'était pas disponible dans l'environnement de développement ; la
-  compilation a utilisé JDK 21 avec la cible Java 17.
+  compilation et les tests Maven ont utilisé JDK 25 avec la cible Java 17. Les
+  services ont été lancés avec JRE 21. Une première tentative avec Java 8 a
+  échoué avant les tests.
 - Les tests automatisés remplacent Node et Gemini par des doubles.
-- Aucun résultat d'exécution mobile complète avec Gemini réel ne doit être
-  affirmé sans validation sur un émulateur configuré.
-- Le diagnostic réel effectué ici n'a pas généré de réponse : le modèle
-  primaire a expiré et l'essai de l'autre modèle a atteint le quota.
+- L'application a été installée et lancée sur l'émulateur, mais son parcours
+  utilisateur n'a pas été testé manuellement.
+- Les sondes Gemini ont rencontré un délai d'attente et une limite de quota,
+  même si une requête de chat réelle ultérieure a produit et persisté une
+  réponse.
 - Le WSDL Metro est disponible uniquement lorsque le service SOAP est lancé.
 
 Perspectives : intégrer des contrôles CI multi-outils, vérifier l'exécution
-sur JDK 17, automatiser un environnement de recette isolé, et produire des
-captures documentaires validées.
+sur JDK 17, réaliser le parcours Flutter complet sur l'émulateur et automatiser
+un environnement de recette isolé.
 
 ## 17. Conclusion générale
 
 L'extension SOA fournit des interfaces REST et SOAP tout en préservant
 Flutter, Express et MongoDB. Le choix de faire de Node un backend unique évite
-la duplication des comptes, conversations, messages et règles d'accès. La
-validation finale de l'intégration réelle reste liée à la disponibilité d'un
-JDK 17, des services locaux, d'un émulateur et d'une configuration Gemini
-valide.
+la duplication des comptes, conversations, messages et règles d'accès. Une
+intégration réelle Java → Node → MongoDB → Gemini a été vérifiée, mais le
+parcours Flutter complet et l'exécution sur JDK 17 restent à valider.
 
 ## 18. Références bibliographiques
 
-Références techniques officielles consultables (dates de consultation à
-compléter avant la remise) :
+Références techniques officielles :
 
 1. Spring Boot, documentation officielle :
    <https://docs.spring.io/spring-boot/>
@@ -380,5 +394,3 @@ compléter avant la remise) :
 - Contrat SOAP : [docs/soa/soap.md](../soa/soap.md)
 - Instructions de test : [docs/soa/testing.md](../soa/testing.md)
 - Exemple Postman et enveloppes SoapUI : [docs/soa/soapui/](../soa/soapui/)
-- Informations à confirmer : auteur, établissement, superviseur, année
-  universitaire, captures d'écran et résultats d'intégration réelle.

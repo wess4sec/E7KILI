@@ -1,62 +1,83 @@
-# SOA Testing and Verification
+# Tests et preuves de vérification SOA
 
-## Automated tests
+## Tests automatisés
 
-Run the Maven reactor tests from PowerShell:
-
-```powershell
-Set-Location .\soa
-.\mvnw.cmd test
-```
-
-Spring tests cover Bearer JWT validation, forwarding to Node, chat response
-mapping, validation, ownership errors, delete, and OpenAPI generation. SOAP
-tests publish a local Metro endpoint and verify runtime WSDL, word counting,
-token requirements, and statistics calculated from mocked Node conversation
-messages.
-
-The tests intentionally mock the Node boundary. They do not access MongoDB or
-Google Gemini and are not an end-to-end availability test.
-
-## Flutter checks
-
-```powershell
-Set-Location .\mobile
-flutter analyze
-flutter test
-```
-
-Flutter tests cover the Spring chat contract, bearer header, continued
-conversation ID, existing UI flows, readable unavailable errors, and retaining
-the composer draft after a failed request.
-
-## Node checks
+Depuis PowerShell :
 
 ```powershell
 Set-Location .\backend
 npm test
-npm run diagnose:gemini
+
+Set-Location ..\mobile
+flutter pub get
+flutter analyze
+flutter test
+flutter build apk --debug
+
+Set-Location ..\soa
+.\mvnw.cmd test
+.\mvnw.cmd package
 ```
 
-The Gemini diagnostic is a real external API request; it requires local backend
-environment configuration. Do not copy its API key or provider headers into a
-test fixture or report.
+Résultats exécutés sur le dépôt :
 
-## Full integration checklist
+| Vérification | Résultat |
+| --- | --- |
+| Tests Node | 44 réussites, 0 échec |
+| Résolution Flutter | Réussie |
+| Analyse Flutter | Aucune anomalie |
+| Tests Flutter | 14 réussites |
+| APK Android debug | Générée |
+| Tests Maven | 14 réussites : 10 Spring, 4 SOAP |
+| Packaging Maven | Réussi |
 
-When a JDK 17 runtime, MongoDB, Node environment, valid Gemini configuration,
-and Android emulator are available:
+Les suites Node et Flutter ainsi que l'analyse Flutter ont été relancées lors
+de l'audit documentaire et ont réussi. Les tests/package Maven et la génération
+APK du tableau correspondent à la campagne d'intégration antérieure ; ils
+n'ont pas été rejoués dans cet audit.
 
-1. Run Node and confirm `GET /api/v1/health`.
-2. Start Spring with the same `JWT_SECRET` as Node.
-3. Start SOAP and confirm `GET /soap/hkili?wsdl`.
-4. Sign in through Flutter; verify login continues to use Node.
-5. Send an authenticated message, then inspect history after a reload.
-6. Confirm the assistant message is only present after successful generation.
-7. Test history, rename, and deletion; verify ownership using another test
-   account.
-8. Use SoapUI with the same account's token to call `statistiques`.
-9. Run a real Gemini diagnostic separately and record its actual result.
+Les tests Java ont été exécutés avec le JDK 25 d'IntelliJ et le compilateur
+ciblait Java 17. Le Java par défaut était la version 8 ; une première
+tentative Maven s'est arrêtée avant les tests, car ce runtime ne charge pas
+les classes Java 17. Après sélection du JDK 25 dans le processus PowerShell,
+les tests et le packaging ont réussi. Le JDK 17 n'était pas installé. Les
+processus Spring et SOAP de l'essai réel ont utilisé le JRE 21 d'Eclipse.
 
-Do not treat mocked tests or a successful service startup as proof that the
-complete Gemini/MongoDB/mobile path works.
+Les suites automatisées simulent les services externes selon le module :
+Spring utilise un client Node simulé ; SOAP vérifie les opérations et les
+statistiques sur des réponses de test ; Flutter vérifie ses contrats API avec
+des clients de test. Elles ne suffisent pas à prouver la disponibilité d'un
+fournisseur externe.
+
+## Vérifications d'intégration réellement exécutées
+
+Les essais suivants ont utilisé des comptes temporaires, puis supprimé les
+comptes, conversations et messages créés :
+
+| Parcours | Résultat observé |
+| --- | --- |
+| OpenAPI JSON et Swagger UI Spring | HTTP 200 |
+| Requête Spring sans jeton ou avec jeton invalide | HTTP 401 |
+| WSDL Metro à l'exécution | HTTP 200 |
+| SOAP `compterMots` sur trois mots | HTTP 200, résultat `3` |
+| Création Node puis lecture de la conversation par Spring | HTTP 200 |
+| Lecture de la conversation par un autre compte | HTTP 403 |
+| Renommage par Spring et vérification du titre dans la liste | HTTP 200 |
+| Suppression par Spring, puis recherche Node | HTTP 204, puis HTTP 404 |
+| SOAP `statistiques` sur un message utilisateur enregistré | 1 message total, 1 utilisateur, 0 assistant, moyenne de 3,00 mots |
+| Spring `POST /chat` via Node, MongoDB et Gemini | HTTP 201 ; l'historique contenait ensuite 3 messages |
+
+Le parcours `POST /chat` a produit une réponse assistant réelle et l'a
+persistée dans la conversation existante. Des sondes Gemini antérieures ont
+renvoyé HTTP 504 et HTTP 429 ; la disponibilité du fournisseur est donc
+variable, malgré cette réussite ponctuelle.
+
+L'APK a été installée et lancée sur l'émulateur Android. L'interaction avec
+l'interface n'a pas été effectuée : aucun parcours utilisateur Flutter de
+bout en bout n'est revendiqué. La chaîne réelle vérifiée est Spring → Node →
+MongoDB → Gemini.
+
+La collection Postman incluse vérifie l'accès OpenAPI et le rejet des requêtes
+métier sans authentification. Elle n'intègre aucun identifiant ni jeton
+utilisateur ; les opérations authentifiées ont été vérifiées avec des comptes
+temporaires lors des essais live.
