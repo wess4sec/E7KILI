@@ -1,0 +1,22 @@
+{
+  "name": "hkili-backend",
+  "version": "0.1.0",
+  "description": "Backend API for Hkili",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22.9.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "diagnose:gemini": "node scripts/gemini-diagnostic.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.12.3"
+  }
+}
