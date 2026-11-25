@@ -32,3 +32,10 @@ Utilisez HTTPS hors développement local, stockez les secrets dans le gestionnai
 du système de déploiement et remplacez tout secret exposé. Limitez CORS et les
 accès réseau. N'enregistrez pas les corps des requêtes, les en-têtes
 d'autorisation, les messages ou les identifiants fournisseur dans les journaux.
+
+En développement, Node et Spring n'autorisent que des origines HTTP locales
+précises ; la configuration inclut aussi une adresse LAN codée en dur pour le
+poste de développement. Le client Flutter écrit les URI et statuts HTTP via
+`debugPrint`, et le journal Node inclut le chemin de requête, qui peut contenir
+un identifiant de conversation. Ces journaux de développement ne doivent pas
+être partagés sans vérification ni utilisés tels quels en production.

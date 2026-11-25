@@ -32,14 +32,16 @@ Corps JSON :
 `message` est requis et limité à 10 000 caractères. `conversationId` est
 facultatif et doit être un ObjectId hexadécimal de 24 caractères. `title` est
 facultatif, limité à 120 caractères et utilisé uniquement lors de la création
-d'une conversation.
+d'une conversation. En l'absence de titre, Spring utilise les 60 premiers
+points de code du message pour créer le titre.
 
 La réponse `201` contient `conversationId`, `conversationTitle`,
 `userMessage` et `assistantMessage`. Chaque message comprend son identifiant,
 celui de la conversation, son rôle, son contenu et sa date de création. Il
 s'agit du contrat documenté ; les valeurs varient selon la requête réelle.
-Node crée une conversation avant la génération. Si celle-ci échoue, Flutter
-conserve le texte non envoyé et une conversation vide peut rester dans Node.
+Spring demande d'abord à Node de créer la conversation, puis lui demande de
+générer le message. Si la génération échoue, Flutter conserve le texte non
+envoyé et la conversation vide peut rester persistée par Node.
 
 ## `GET /conversations`
 
@@ -72,7 +74,7 @@ les statuts suivants :
 | `401` | Jeton absent, invalide ou expiré |
 | `403` | Conversation appartenant à un autre compte |
 | `404` | Ressource inexistante |
-| `429` | Limite de débit ou quota |
+| `429` | Limite de débit ou quota renvoyé par Node/Gemini |
 | `502` | Réponse amont invalide |
 | `503` | API Node indisponible |
 | `504` | Délai d'attente amont dépassé |

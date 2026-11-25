@@ -31,6 +31,11 @@ Résultats exécutés sur le dépôt :
 | Tests Maven | 14 réussites : 10 Spring, 4 SOAP |
 | Packaging Maven | Réussi |
 
+Les suites Node et Flutter ainsi que l'analyse Flutter ont été relancées lors
+de l'audit documentaire et ont réussi. Les tests/package Maven et la génération
+APK du tableau correspondent à la campagne d'intégration antérieure ; ils
+n'ont pas été rejoués dans cet audit.
+
 Les tests Java ont été exécutés avec le JDK 25 d'IntelliJ et le compilateur
 ciblait Java 17. Le Java par défaut était la version 8 ; une première
 tentative Maven s'est arrêtée avant les tests, car ce runtime ne charge pas

@@ -68,7 +68,14 @@ les variables de leur processus ; `JWT_SECRET` doit correspondre à celui de
 Node.
 
 Les journaux de requêtes contiennent la méthode, le chemin, le statut et la
-durée, sans le corps, les en-têtes ou les paramètres de requête.
+durée, sans le corps, les en-têtes ou les paramètres de requête. Le chemin
+peut contenir un identifiant de conversation. Le client Flutter journalise
+également l'URI et le statut des appels en mode debug.
+
+Pour le navigateur, l'adresse par défaut de développement est
+`192.168.100.116`; elle est spécifique au réseau local. Utilisez les
+variables Dart `API_BASE_URL` et `SOA_API_BASE_URL` pour choisir les adresses
+réellement joignables depuis le navigateur.
 
 ## État vérifié
 

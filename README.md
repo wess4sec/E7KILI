@@ -26,9 +26,10 @@ sans déplacer l'authentification, les données ni la logique d'IA hors de Node.
   messages réels d'une conversation.
 - Tests automatisés pour Node, Flutter, Spring REST et JAX-WS.
 
-Le mode invité conserve une conversation locale de démonstration ; il ne crée
-pas de données serveur. La génération réelle dépend de la configuration et de
-la disponibilité du service Gemini.
+Le mode invité conserve sa conversation en mémoire pendant la session, avec
+des réponses de démonstration ; il ne crée ni données serveur ni historique
+local persistant. La génération réelle dépend de la configuration et de la
+disponibilité du service Gemini.
 
 ## Technologies
 
@@ -217,10 +218,12 @@ Set-Location ..\soa
 .\mvnw.cmd package
 ```
 
-Lors de la dernière vérification, les 44 tests Node, les 14 tests Flutter,
-l'analyse statique et la génération de l'APK debug ont réussi. Maven a exécuté
-14 tests (10 Spring et 4 SOAP) et le packaging a réussi. Le JDK 17 n'étant pas
-disponible, ces résultats ne valident pas l'exécution sur cette version.
+Les 44 tests Node, les 14 tests Flutter et l'analyse statique ont été relancés
+pendant l'audit documentaire et ont réussi. La génération APK et les 14 tests
+Maven (10 Spring et 4 SOAP), ainsi que le packaging, correspondent à la
+campagne d'intégration précédemment enregistrée ; ils n'ont pas été rejoués
+dans cet audit. Le JDK 17 n'étant pas disponible, ces résultats ne valident
+pas l'exécution sur cette version.
 
 L'APK debug est générée dans
 `mobile\build\app\outputs\flutter-apk\app-debug.apk`.

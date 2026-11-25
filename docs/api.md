@@ -128,11 +128,16 @@ Corps JSON requis :
 
 `content` contient de 1 à 10 000 caractères. `role` accepte `user` ou
 `assistant` et vaut `user` par défaut. `generateReply` est un booléen facultatif.
-Lorsqu'une réponse Gemini est demandée et générée avec succès, le backend
-enregistre le message utilisateur et la réponse assistant, puis renvoie `201`
-avec les objets `message` et `userMessage`. Si la génération échoue, aucune
-paire de messages n'est enregistrée. Avec `generateReply: false`, la route
-permet une insertion sans génération.
+Pour un message `user`, son omission déclenche la génération si Gemini est
+configuré ; sans configuration, le message seul est enregistré. Avec
+`generateReply: true`, l'absence de configuration renvoie `503`. Avec
+`generateReply: false`, le message est enregistré sans génération. Si Gemini
+est configuré mais que la génération échoue, ni le message utilisateur ni une
+réponse assistant ne sont enregistrés. Une génération réussie enregistre les
+deux messages puis renvoie `201` avec les objets `message` et `userMessage`.
+Les messages explicitement envoyés avec `role: "assistant"` ne sont pas
+transmis à Gemini ; la demande explicite `generateReply: true` sans Gemini
+configuré renvoie néanmoins `503`.
 
 ### `GET /api/v1/conversations/:id/messages`
 
@@ -154,7 +159,7 @@ utilisés comprennent :
 | `409` | Adresse déjà enregistrée |
 | `413` | Corps de requête supérieur à 16 Kio |
 | `422` | Réponse IA bloquée |
-| `429` | Limite de débit ou quota Gemini |
+| `429` | Limite de débit ou quota signalé par Gemini |
 | `502` | Réponse fournisseur invalide ou rejetée |
 | `503` | Service ou configuration indisponible |
 | `504` | Délai d'attente fournisseur dépassé |

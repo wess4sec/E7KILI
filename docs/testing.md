@@ -4,6 +4,11 @@
 
 ### Backend Node.js
 
+La suite d'intégration utilise MongoDB locale sur
+`mongodb://127.0.0.1:27017` et crée une base de test au nom aléatoire
+`hkili_test_*`, supprimée à la fin de la suite. Elle ne doit pas être exécutée
+contre une base de données de production.
+
 ```powershell
 Set-Location .\backend
 npm test
@@ -43,7 +48,7 @@ vérifient le WSDL produit par Metro, le comptage de mots, l'authentification
 et les statistiques à partir de réponses de test. Ils n'appellent ni Gemini
 ni MongoDB.
 
-## Résultats de la dernière vérification
+## Résultats de la dernière campagne enregistrée
 
 | Vérification | Résultat |
 | --- | --- |
@@ -55,6 +60,11 @@ ni MongoDB.
 | `flutter build web` | Réussi, avec avertissements Wasm et d'icônes Cupertino |
 | `.\mvnw.cmd test` | 14 réussites : 10 Spring et 4 SOAP |
 | `.\mvnw.cmd package` | Réussi |
+
+`npm test`, `flutter analyze` et `flutter test` ont été relancés pendant l'audit
+documentaire et ont conservé ces résultats. Les commandes Maven et le build
+APK/Web rapportés ci-dessus proviennent de la campagne antérieure ; ils n'ont
+pas été réexécutés dans cet audit.
 
 Maven a été exécuté avec le JDK 25 d'IntelliJ et le compilateur ciblait Java
 17. Le JDK 17 n'était pas installé. Les services Spring et SOAP de l'essai

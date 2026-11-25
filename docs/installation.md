@@ -71,3 +71,16 @@ Les adresses de l'émulateur Android sont configurées dans
 `mobile/lib/services/api_config.dart`. Les variables Dart
 `API_BASE_URL` et `SOA_API_BASE_URL` permettent de les remplacer ; elles
 contiennent uniquement des adresses de services.
+
+Pour exécuter Flutter Web sur la même machine que les services, forcez les
+adresses locales autorisées par les configurations CORS actuelles :
+
+```powershell
+Set-Location .\mobile
+flutter run -d chrome `
+  --dart-define=API_BASE_URL=http://localhost:3000/api/v1 `
+  --dart-define=SOA_API_BASE_URL=http://localhost:8081
+```
+
+Sans ces options, la configuration Web utilise l'adresse de développement
+`192.168.100.116`, qui peut ne pas correspondre à l'adresse de la machine.

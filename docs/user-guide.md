@@ -9,7 +9,8 @@ sécurisé et le transmet aux services protégés sous forme de jeton Bearer.
 ## Mode invité
 
 Le mode invité ouvre le chat local de démonstration. Il ne crée pas de
-conversation côté serveur et ne conserve pas les messages dans MongoDB.
+conversation côté serveur et ne persiste pas les messages sur l'appareil ;
+ils ne sont conservés qu'en mémoire pendant la session.
 
 ## Chat
 

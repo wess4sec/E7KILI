@@ -265,6 +265,11 @@ Bearer, le traitement des erreurs et la conservation du brouillon.
 
 **Résultats vérifiés dans cet environnement :**
 
+- `npm test`, `flutter analyze` et `flutter test` ont été relancés le
+  25 novembre 2026 pendant l'audit documentaire : résultats inchangés.
+- Les tests Maven et les builds APK/Web mentionnés ci-dessous proviennent de
+  la campagne d'intégration antérieure et n'ont pas été rejoués pendant cet
+  audit documentaire.
 - `npm test` : 44 tests réussis, aucun échec (inclut les changements CORS/Web
   présents dans le worktree au moment de l'exécution).
 - `flutter test` : 14 tests réussis ; `flutter analyze` : aucune anomalie.
