@@ -106,6 +106,51 @@ class HkiliSoapServiceTest {
     }
 
     @Test
+    void rejectsInvalidConversationIdentifierWithAClientFault() throws Exception {
+        String envelope = """
+                <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+                               xmlns:hk="urn:hkili:soa">
+                  <soap:Header/>
+                  <soap:Body>
+                    <hk:statistiques>
+                      <idConversation>invalid</idConversation>
+                    </hk:statistiques>
+                  </soap:Body>
+                </soap:Envelope>
+                """;
+        HttpResponse<String> response = request(
+                "POST",
+                "http://127.0.0.1:" + port + "/soap/hkili",
+                envelope,
+                TOKEN
+        );
+        assertEquals(500, response.statusCode());
+        assertTrue(response.body().contains("The conversation identifier is invalid"));
+    }
+
+    @Test
+    void mapsNodeOwnershipFailureToAFilteredSoapFault() throws Exception {
+        when(nodeApi.getConversation(
+                eq(CONVERSATION_ID),
+                eq(1),
+                eq(100),
+                eq(TOKEN)
+        )).thenThrow(new tn.hkili.soa.client.NodeApiException(
+                403,
+                "FORBIDDEN"
+        ));
+
+        HttpResponse<String> response = request(
+                "POST",
+                "http://127.0.0.1:" + port + "/soap/hkili",
+                statisticsRequest(),
+                TOKEN
+        );
+        assertEquals(500, response.statusCode());
+        assertTrue(response.body().contains("Access to this conversation is denied"));
+    }
+
+    @Test
     void returnsStatisticsCalculatedFromNodeConversationMessages() throws Exception {
         when(nodeApi.getConversation(
                 eq(CONVERSATION_ID),

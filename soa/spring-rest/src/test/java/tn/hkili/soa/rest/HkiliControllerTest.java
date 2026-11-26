@@ -93,6 +93,27 @@ class HkiliControllerTest {
         mockMvc.perform(get("/conversations")
                         .header("Authorization", "Bearer not-a-jwt"))
                 .andExpect(status().isUnauthorized());
+
+        Instant now = Instant.now();
+        String expiredToken = Jwts.builder()
+                .subject(USER_ID)
+                .issuedAt(Date.from(now.minusSeconds(120)))
+                .expiration(Date.from(now.minusSeconds(60)))
+                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8)))
+                .compact();
+
+        mockMvc.perform(get("/conversations")
+                        .header("Authorization", "Bearer " + expiredToken))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHENTICATED"));
+    }
+
+    @Test
+    void rejectsNonBearerAuthorizationSchemes() throws Exception {
+        mockMvc.perform(get("/conversations")
+                        .header("Authorization", "Basic " + token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error.code").value("UNAUTHENTICATED"));
     }
 
     @Test
