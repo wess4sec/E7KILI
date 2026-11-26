@@ -58,18 +58,17 @@ ni MongoDB.
 | `flutter test` | 14 réussites |
 | `flutter build apk --debug` | Réussi |
 | `flutter build web` | Réussi, avec avertissements Wasm et d'icônes Cupertino |
-| `.\mvnw.cmd test` | 14 réussites : 10 Spring et 4 SOAP |
+| `.\mvnw.cmd test` | 17 réussites : 11 Spring et 6 SOAP |
 | `.\mvnw.cmd package` | Réussi |
 
-`npm test`, `flutter analyze` et `flutter test` ont été relancés pendant l'audit
-documentaire et ont conservé ces résultats. Les commandes Maven et le build
-APK/Web rapportés ci-dessus proviennent de la campagne antérieure ; ils n'ont
-pas été réexécutés dans cet audit.
+`npm test`, `flutter analyze`, `flutter test` et le package Maven ont été
+relancés avec les tests SOA étendus. Les tests Maven donnent 17 réussites.
+Le build APK/Web rapporté ci-dessus provient de la campagne antérieure et n'a
+pas été rejoué dans cette validation.
 
-Maven a été exécuté avec le JDK 25 d'IntelliJ et le compilateur ciblait Java
-17. Le JDK 17 n'était pas installé. Les services Spring et SOAP de l'essai
-réel ont fonctionné avec le JRE 21 d'Eclipse ; l'exécution avec Java 17 reste
-à valider.
+Maven a été exécuté avec le JDK 27 disponible localement et le compilateur
+ciblait Java 17. Le JDK 17 n'était pas installé ; l'exécution sur un JDK 17
+de production reste donc à valider sur l'environnement final.
 
 Les vérifications d'intégration et leurs statuts HTTP sont consignés dans
 [docs/soa/testing.md](soa/testing.md). Une requête réelle Spring → Node →

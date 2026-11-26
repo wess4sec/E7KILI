@@ -276,7 +276,7 @@ Bearer, le traitement des erreurs et la conservation du brouillon.
 - `flutter build apk --debug` : build réussi.
 - `flutter build web` : build réussi ; Flutter a signalé des avertissements de
   compatibilité du test Wasm et de police CupertinoIcons.
-- `soa/mvnw.cmd test` : 14 tests réussis (10 Spring, 4 SOAP). Le packaging Maven
+- `soa/mvnw.cmd test` : 17 tests réussis (11 Spring, 6 SOAP). Le packaging Maven
   complet s'est également terminé avec le code de sortie 0.
 - Maven 3.9.9 a exécuté les tests et le packaging avec le JDK 25 fourni par
   IntelliJ ; le compilateur cible Java 17 (`--release 17`). Les processus
